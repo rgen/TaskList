@@ -1,0 +1,21 @@
+import { NextResponse } from 'next/server'
+import db from '@/lib/db'
+
+export async function GET() {
+  try {
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date()
+      d.setDate(d.getDate() + i)
+      const date = d.toISOString().slice(0, 10)
+      const day = d.toLocaleDateString('en-US', { weekday: 'short' })
+      const count = db.prepare(
+        'SELECT COUNT(*) as count FROM tasks WHERE due_date = ?'
+      ).get(date).count
+      days.push({ date, day, count })
+    }
+    return NextResponse.json(days)
+  } catch (err) {
+    return NextResponse.json({ message: err.message }, { status: 500 })
+  }
+}
