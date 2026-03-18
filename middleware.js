@@ -5,7 +5,7 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'tasklist-secr
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl
-  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth')
+  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/api/auth') || pathname.startsWith('/api/')
 
   if (isPublic) return NextResponse.next()
 
