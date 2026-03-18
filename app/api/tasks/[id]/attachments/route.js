@@ -1,10 +1,10 @@
+import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
-import db from '@/lib/db'
 
 export async function POST(request, { params }) {
   try {
     const { id } = params
-    const task = db.prepare('SELECT id FROM tasks WHERE id = ?').get(id)
+    const { rows: [task] } = await sql`SELECT id FROM tasks WHERE id = ${id}`
     if (!task) {
       return NextResponse.json({ message: 'Task not found' }, { status: 404 })
     }
@@ -15,13 +15,11 @@ export async function POST(request, { params }) {
       return NextResponse.json({ message: 'url is required' }, { status: 400 })
     }
 
-    const info = db.prepare(
-      'INSERT INTO attachments (task_id, label, url) VALUES (?, ?, ?)'
-    ).run(id, label || null, url.trim())
-
-    const attachment = db.prepare('SELECT * FROM attachments WHERE id = ?').get(info.lastInsertRowid)
+    const { rows: [attachment] } = await sql`
+      INSERT INTO attachments (task_id, label, url) VALUES (${id}, ${label || null}, ${url.trim()})
+      RETURNING *`
     return NextResponse.json(attachment, { status: 201 })
-  } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 })
+  } catch (e) {
+    return NextResponse.json({ message: e.message }, { status: 500 })
   }
 }

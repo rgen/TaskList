@@ -1,12 +1,6 @@
 node_modules/
 server/node_modules/
 client/node_modules/
-server/tasks.db
-server/tasks.db-shm
-server/tasks.db-wal
-tasks.db
-tasks.db-shm
-tasks.db-wal
 dist/
 .next/
 .DS_Store

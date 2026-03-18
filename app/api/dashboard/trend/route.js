@@ -1,19 +1,17 @@
+import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
-import db from '@/lib/db'
 
 export async function GET() {
   try {
-    const rows = db.prepare(`
-      SELECT date(completed_at) as date, COUNT(*) as count
+    const { rows } = await sql`
+      SELECT TO_CHAR(completed_at, 'YYYY-MM-DD') as date, COUNT(*) as count
       FROM tasks
-      WHERE completed_at IS NOT NULL
-        AND completed_at >= datetime('now', '-30 days')
-      GROUP BY date(completed_at)
-      ORDER BY date ASC
-    `).all()
+      WHERE completed_at IS NOT NULL AND completed_at >= NOW() - INTERVAL '30 days'
+      GROUP BY TO_CHAR(completed_at, 'YYYY-MM-DD')
+      ORDER BY date ASC`
 
     const map = {}
-    rows.forEach(r => { map[r.date] = r.count })
+    rows.forEach(r => { map[r.date] = +r.count })
 
     const result = []
     for (let i = 29; i >= 0; i--) {
@@ -24,7 +22,7 @@ export async function GET() {
     }
 
     return NextResponse.json(result)
-  } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 })
+  } catch (e) {
+    return NextResponse.json({ message: e.message }, { status: 500 })
   }
 }

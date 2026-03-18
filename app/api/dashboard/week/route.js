@@ -1,5 +1,5 @@
+import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
-import db from '@/lib/db'
 
 export async function GET() {
   try {
@@ -9,13 +9,11 @@ export async function GET() {
       d.setDate(d.getDate() + i)
       const date = d.toISOString().slice(0, 10)
       const day = d.toLocaleDateString('en-US', { weekday: 'short' })
-      const count = db.prepare(
-        'SELECT COUNT(*) as count FROM tasks WHERE due_date = ?'
-      ).get(date).count
-      days.push({ date, day, count })
+      const { rows: [{ count }] } = await sql`SELECT COUNT(*) FROM tasks WHERE due_date = ${date}`
+      days.push({ date, day, count: +count })
     }
     return NextResponse.json(days)
-  } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 })
+  } catch (e) {
+    return NextResponse.json({ message: e.message }, { status: 500 })
   }
 }

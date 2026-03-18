@@ -1,12 +1,12 @@
+import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
-import db from '@/lib/db'
 
 export async function GET() {
   try {
-    const statuses = db.prepare('SELECT * FROM custom_statuses ORDER BY id ASC').all()
-    return NextResponse.json(statuses)
-  } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 })
+    const { rows } = await sql`SELECT * FROM custom_statuses ORDER BY id`
+    return NextResponse.json(rows)
+  } catch (e) {
+    return NextResponse.json({ message: e.message }, { status: 500 })
   }
 }
 
@@ -29,14 +29,12 @@ export async function POST(request) {
     }
 
     try {
-      const info = db.prepare(
-        'INSERT INTO custom_statuses (name, color) VALUES (?, ?)'
-      ).run(trimmed, color || '#6b7280')
-
-      const created = db.prepare('SELECT * FROM custom_statuses WHERE id = ?').get(info.lastInsertRowid)
+      const { rows: [created] } = await sql`
+        INSERT INTO custom_statuses (name, color) VALUES (${trimmed}, ${color || '#6b7280'})
+        RETURNING *`
       return NextResponse.json(created, { status: 201 })
     } catch (dbErr) {
-      if (dbErr.message && dbErr.message.includes('UNIQUE constraint failed')) {
+      if (dbErr.code === '23505') {
         return NextResponse.json(
           { message: 'A status with that name already exists' },
           { status: 409 }
@@ -44,7 +42,7 @@ export async function POST(request) {
       }
       throw dbErr
     }
-  } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 })
+  } catch (e) {
+    return NextResponse.json({ message: e.message }, { status: 500 })
   }
 }
