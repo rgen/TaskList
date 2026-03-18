@@ -37,3 +37,6 @@ CREATE TABLE IF NOT EXISTS users (
   password TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration: add per-user ownership to tasks
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;

@@ -1,15 +1,20 @@
 import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
+import { getUser } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
-    const { rows: [{ count: total }] } = await sql`SELECT COUNT(*) FROM tasks`
-    const { rows: [{ count: completed }] } = await sql`SELECT COUNT(*) FROM tasks WHERE status = 'completed'`
-    const { rows: [{ count: pending }] } = await sql`SELECT COUNT(*) FROM tasks WHERE status != 'completed'`
-    const { rows: [{ count: overdue }] } = await sql`SELECT COUNT(*) FROM tasks WHERE due_date < CURRENT_DATE::text AND status != 'completed'`
-    const { rows: [{ count: high }] } = await sql`SELECT COUNT(*) FROM tasks WHERE priority = 'high'`
-    const { rows: [{ count: medium }] } = await sql`SELECT COUNT(*) FROM tasks WHERE priority = 'medium'`
-    const { rows: [{ count: low }] } = await sql`SELECT COUNT(*) FROM tasks WHERE priority = 'low'`
+    const userId = Number(user.id)
+    const { rows: [{ count: total }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId}`
+    const { rows: [{ count: completed }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND status = 'completed'`
+    const { rows: [{ count: pending }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND status != 'completed'`
+    const { rows: [{ count: overdue }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND due_date < CURRENT_DATE::text AND status != 'completed'`
+    const { rows: [{ count: high }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'high'`
+    const { rows: [{ count: medium }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'medium'`
+    const { rows: [{ count: low }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'low'`
 
     return NextResponse.json({
       total: +total,

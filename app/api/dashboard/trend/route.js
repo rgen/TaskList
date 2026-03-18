@@ -1,12 +1,17 @@
 import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
+import { getUser } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
+    const userId = Number(user.id)
     const { rows } = await sql`
       SELECT TO_CHAR(completed_at, 'YYYY-MM-DD') as date, COUNT(*) as count
       FROM tasks
-      WHERE completed_at IS NOT NULL AND completed_at >= NOW() - INTERVAL '30 days'
+      WHERE completed_at IS NOT NULL AND completed_at >= NOW() - INTERVAL '30 days' AND user_id = ${userId}
       GROUP BY TO_CHAR(completed_at, 'YYYY-MM-DD')
       ORDER BY date ASC`
 

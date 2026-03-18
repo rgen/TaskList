@@ -1,9 +1,18 @@
 import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
+import { getUser } from '@/lib/auth'
 
 export async function PUT(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id, subtaskId } = params
+    const { rows: [task] } = await sql`SELECT user_id FROM tasks WHERE id = ${id}`
+    if (!task || task.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
+    }
+
     const { rows: [subtask] } = await sql`
       SELECT * FROM subtasks WHERE id = ${subtaskId} AND task_id = ${id}`
 
@@ -26,8 +35,16 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id, subtaskId } = params
+    const { rows: [task] } = await sql`SELECT user_id FROM tasks WHERE id = ${id}`
+    if (!task || task.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
+    }
+
     const { rows: [subtask] } = await sql`
       SELECT * FROM subtasks WHERE id = ${subtaskId} AND task_id = ${id}`
 

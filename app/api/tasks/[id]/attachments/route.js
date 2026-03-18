@@ -1,12 +1,16 @@
 import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
+import { getUser } from '@/lib/auth'
 
 export async function POST(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id } = params
-    const { rows: [task] } = await sql`SELECT id FROM tasks WHERE id = ${id}`
-    if (!task) {
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 })
+    const { rows: [task] } = await sql`SELECT user_id FROM tasks WHERE id = ${id}`
+    if (!task || task.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
     const body = await request.json()

@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
+import { getUser } from '@/lib/auth'
 
 function addIsOverdue(task) {
   const today = new Date().toISOString().slice(0, 10)
@@ -12,11 +13,14 @@ function addIsOverdue(task) {
 }
 
 export async function GET(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id } = params
     const { rows: [task] } = await sql`SELECT * FROM tasks WHERE id = ${id}`
-    if (!task) {
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 })
+    if (!task || task.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
     const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${task.id} ORDER BY id`
@@ -33,11 +37,14 @@ export async function GET(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id } = params
     const { rows: [existing] } = await sql`SELECT * FROM tasks WHERE id = ${id}`
-    if (!existing) {
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 })
+    if (!existing || existing.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -81,11 +88,14 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id } = params
-    const { rows: [task] } = await sql`SELECT id FROM tasks WHERE id = ${id}`
-    if (!task) {
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 })
+    const { rows: [task] } = await sql`SELECT id, user_id FROM tasks WHERE id = ${id}`
+    if (!task || task.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
     await sql`DELETE FROM tasks WHERE id = ${id}`
