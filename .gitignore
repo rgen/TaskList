@@ -1,7 +1,11 @@
 node_modules/
 server/node_modules/
 client/node_modules/
+*.db
+*.db-shm
+*.db-wal
 dist/
 .next/
 .DS_Store
 *.log
+.env*.local
