@@ -93,7 +93,7 @@ export default function TaskRow({ task, onEdit, onDelete }) {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                {subtasksOpen ? 'Hide subtasks' : `Open subtasks (${task.subtask_count})`}
+                {subtasksOpen ? 'Hide Subtasks' : `Open Subtasks (${task.subtask_count})`}
               </button>
               {subtasksOpen && <InlineSubtasks taskId={task.id} />}
             </>
