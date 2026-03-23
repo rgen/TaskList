@@ -8,7 +8,9 @@ import StatusSelect from './StatusSelect'
 
 export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
   const isEdit = !!taskId
-  const { data: task, isLoading } = useTask(taskId)
+  const { data: fetchedTask, isLoading } = useTask(taskId)
+  const [newlyCreatedTask, setNewlyCreatedTask] = useState(null)
+  const task = fetchedTask ?? newlyCreatedTask
 
   const createMutation = useCreateTask()
   const updateMutation = useUpdateTask()
@@ -37,6 +39,10 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
     : null
 
   useEffect(() => {
+    if (!isOpen) {
+      setNewlyCreatedTask(null)
+      return
+    }
     if (isEdit && task) {
       reset({
         name: task.name || '',
@@ -46,6 +52,7 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
       })
       setStatusValue(task.status || 'pending')
     } else if (!isEdit) {
+      setNewlyCreatedTask(null)
       reset({
         name: '',
         notes: '',
@@ -54,7 +61,7 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
       })
       setStatusValue('pending')
     }
-  }, [isEdit, task, reset])
+  }, [isOpen, isEdit, task, reset])
 
   if (!isOpen) return null
 
@@ -75,6 +82,7 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
       onClose()
     } else {
       const newTask = await createMutation.mutateAsync(payload)
+      setNewlyCreatedTask(newTask)
       onCreated?.(newTask.id)
     }
   }
