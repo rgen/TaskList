@@ -245,6 +245,15 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
                       </div>
                     </div>
                   </div>
+
+                  {isEdit && task?.created_at && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date Created</label>
+                      <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500">
+                        {new Date(task.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
