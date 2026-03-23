@@ -20,14 +20,14 @@ export async function GET(request) {
 
     const conditions = []
     const values = []
-    if (status) { conditions.push(`status = $${values.length + 1}`); values.push(status) }
-    if (priority) { conditions.push(`priority = $${values.length + 1}`); values.push(priority) }
+    if (status) { conditions.push(`t.status = $${values.length + 1}`); values.push(status) }
+    if (priority) { conditions.push(`t.priority = $${values.length + 1}`); values.push(priority) }
 
-    conditions.push(`user_id = $${values.length + 1}`)
+    conditions.push(`t.user_id = $${values.length + 1}`)
     values.push(Number(user.id))
 
     const where = `WHERE ${conditions.join(' AND ')}`
-    const q = `SELECT *, (due_date IS NOT NULL AND due_date < CURRENT_DATE::text AND status != 'completed') AS is_overdue FROM tasks ${where} ORDER BY ${sortCol} ${sortDir}`
+    const q = `SELECT t.*, (t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed') AS is_overdue, COUNT(s.id)::int AS subtask_count FROM tasks t LEFT JOIN subtasks s ON s.task_id = t.id ${where} GROUP BY t.id ORDER BY t.${sortCol} ${sortDir}`
     const { rows } = await client.query(q, values)
     return NextResponse.json(rows)
   } catch (e) {

@@ -1,12 +1,40 @@
 'use client'
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import clsx from 'clsx'
 import { useToggleTask } from '@/hooks/useTasks'
+import { useSubtasks, useUpdateSubtask } from '@/hooks/useSubtasks'
 import PriorityBadge from './PriorityBadge'
 import OverdueBadge from './OverdueBadge'
 
+function InlineSubtasks({ taskId }) {
+  const { data: subtasks = [], isLoading } = useSubtasks(taskId)
+  const updateMutation = useUpdateSubtask(taskId)
+
+  if (isLoading) return <p className="text-xs text-gray-400 mt-2">Loading…</p>
+
+  return (
+    <ul className="mt-2 space-y-1.5">
+      {subtasks.map((subtask) => (
+        <li key={subtask.id} className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={subtask.completed}
+            onChange={() => updateMutation.mutate({ id: subtask.id, data: { completed: !subtask.completed } })}
+            className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          />
+          <span className={clsx('text-xs', subtask.completed ? 'line-through text-gray-400' : 'text-gray-600')}>
+            {subtask.name}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export default function TaskRow({ task, onEdit, onDelete }) {
   const toggleMutation = useToggleTask()
+  const [subtasksOpen, setSubtasksOpen] = useState(false)
 
   function handleToggle() {
     toggleMutation.mutate(task.id)
@@ -41,9 +69,7 @@ export default function TaskRow({ task, onEdit, onDelete }) {
           <span
             className={clsx(
               'text-sm font-medium',
-              task.status === 'completed'
-                ? 'line-through text-gray-400'
-                : 'text-gray-900'
+              task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-900'
             )}
           >
             {task.name}
@@ -54,6 +80,24 @@ export default function TaskRow({ task, onEdit, onDelete }) {
           <div className="flex gap-1.5 flex-wrap">
             {task.is_overdue && <OverdueBadge />}
           </div>
+          {task.subtask_count > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setSubtasksOpen((o) => !o)}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium w-fit mt-0.5"
+              >
+                <svg
+                  className={clsx('w-3 h-3 transition-transform duration-150', subtasksOpen && 'rotate-90')}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                {subtasksOpen ? 'Hide subtasks' : `Open subtasks (${task.subtask_count})`}
+              </button>
+              {subtasksOpen && <InlineSubtasks taskId={task.id} />}
+            </>
+          )}
         </div>
       </td>
 
