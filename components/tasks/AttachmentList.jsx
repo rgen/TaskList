@@ -8,8 +8,7 @@ export default function AttachmentList({ taskId, attachments = [] }) {
   const createMutation = useCreateAttachment(taskId)
   const deleteMutation = useDeleteAttachment(taskId)
 
-  function handleAdd(e) {
-    e.preventDefault()
+  function handleAdd() {
     if (!url.trim()) return
     createMutation.mutate({ url: url.trim(), label: label.trim() || null }, {
       onSuccess: () => { setUrl(''); setLabel('') },
@@ -49,7 +48,7 @@ export default function AttachmentList({ taskId, attachments = [] }) {
           <li className="text-sm text-gray-400 italic">No attachments yet</li>
         )}
       </ul>
-      <form onSubmit={handleAdd} className="space-y-2">
+      <div className="space-y-2">
         <input
           type="url"
           value={url}
@@ -66,14 +65,15 @@ export default function AttachmentList({ taskId, attachments = [] }) {
             className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleAdd}
             disabled={createMutation.isPending || !url.trim()}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             Add
           </button>
         </div>
-      </form>
+      </div>
     </div>
   )
 }

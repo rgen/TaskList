@@ -8,12 +8,15 @@ export default function SubtaskList({ taskId, subtasks = [] }) {
   const updateMutation = useUpdateSubtask(taskId)
   const deleteMutation = useDeleteSubtask(taskId)
 
-  function handleAdd(e) {
-    e.preventDefault()
+  function handleAdd() {
     if (!newName.trim()) return
     createMutation.mutate({ name: newName.trim() }, {
       onSuccess: () => setNewName(''),
     })
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleAdd() }
   }
 
   function toggleSubtask(subtask) {
@@ -54,22 +57,24 @@ export default function SubtaskList({ taskId, subtasks = [] }) {
           <li className="text-sm text-gray-400 italic">No subtasks yet</li>
         )}
       </ul>
-      <form onSubmit={handleAdd} className="flex gap-2">
+      <div className="flex gap-2">
         <input
           type="text"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Add a subtask…"
           className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleAdd}
           disabled={createMutation.isPending || !newName.trim()}
           className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           Add
         </button>
-      </form>
+      </div>
     </div>
   )
 }
