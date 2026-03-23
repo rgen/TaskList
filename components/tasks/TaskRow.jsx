@@ -88,13 +88,14 @@ export default function TaskRow({ task, onEdit, onDelete }) {
       {/* Duration */}
       <td className="px-3 py-3 whitespace-nowrap">
         <span className="text-sm text-gray-600">
-          {task.duration === null || task.duration === undefined
+          {!task.due_date
             ? '—'
-            : task.duration === 0
-            ? 'Due today'
-            : task.duration > 0
-            ? `${task.duration}d remaining`
-            : `${Math.abs(task.duration)}d overdue`}
+            : (() => {
+                const days = Math.ceil((new Date(task.due_date) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
+                if (days === 0) return 'Due today'
+                if (days > 0) return `${days}d remaining`
+                return `${Math.abs(days)}d overdue`
+              })()}
         </span>
       </td>
 
