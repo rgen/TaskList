@@ -23,7 +23,8 @@ export function useCreateTask() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data) => tasksApi.create(data),
-    onSuccess: () => {
+    onSuccess: (newTask) => {
+      qc.setQueryData([TASKS_KEY, newTask.id], newTask)
       qc.invalidateQueries({ queryKey: [TASKS_KEY] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
     },
