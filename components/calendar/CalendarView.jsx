@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay, parseISO } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns'
 import clsx from 'clsx'
 import { useTasks } from '@/hooks/useTasks'
 import TaskModal from '@/components/tasks/TaskModal'
@@ -36,10 +36,8 @@ export default function CalendarView() {
   const today = new Date()
 
   function getTasksForDay(day) {
-    return tasks.filter((t) => {
-      if (!t.due_date) return false
-      try { return isSameDay(parseISO(t.due_date), day) } catch { return false }
-    })
+    const dayStr = format(day, 'yyyy-MM-dd')
+    return tasks.filter((t) => t.due_date === dayStr)
   }
 
   function openTask(id) {
