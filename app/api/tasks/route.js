@@ -1,4 +1,4 @@
-import { sql, db } from '@vercel/postgres'
+import { sql, db } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 

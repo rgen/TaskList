@@ -20,6 +20,7 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -27,9 +28,13 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
       notes: '',
       priority: 'medium',
       due_date: '',
-      duration: '',
     },
   })
+
+  const dueDateValue = watch('due_date')
+  const computedDuration = dueDateValue
+    ? Math.ceil((new Date(dueDateValue) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
+    : null
 
   useEffect(() => {
     if (isEdit && task) {
@@ -38,7 +43,6 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
         notes: task.notes || '',
         priority: task.priority || 'medium',
         due_date: task.due_date || '',
-        duration: task.duration || '',
       })
       setStatusValue(task.status || 'pending')
     } else if (!isEdit) {
@@ -47,7 +51,6 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
         notes: '',
         priority: 'medium',
         due_date: '',
-        duration: '',
       })
       setStatusValue('pending')
     }
@@ -62,7 +65,9 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
       status: statusValue,
       priority: data.priority,
       due_date: data.due_date || null,
-      duration: data.duration ? parseInt(data.duration, 10) : null,
+      duration: data.due_date
+        ? Math.ceil((new Date(data.due_date) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
+        : null,
     }
 
     if (isEdit) {
@@ -163,15 +168,17 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duration (min)
+                        Duration
                       </label>
-                      <input
-                        type="number"
-                        {...register('duration', { min: 1 })}
-                        min={1}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g. 30"
-                      />
+                      <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500">
+                        {computedDuration === null
+                          ? 'Set a due date'
+                          : computedDuration === 0
+                          ? 'Due today'
+                          : computedDuration > 0
+                          ? `${computedDuration} day${computedDuration !== 1 ? 's' : ''} remaining`
+                          : `${Math.abs(computedDuration)} day${Math.abs(computedDuration) !== 1 ? 's' : ''} overdue`}
+                      </div>
                     </div>
                   </div>
                 </div>

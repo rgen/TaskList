@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 import { getUser } from '@/lib/auth'
 import { randomBytes } from 'crypto'
 
