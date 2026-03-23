@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
 const RECOVERY_CODE = '1981'

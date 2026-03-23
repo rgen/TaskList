@@ -88,7 +88,13 @@ export default function TaskRow({ task, onEdit, onDelete }) {
       {/* Duration */}
       <td className="px-3 py-3 whitespace-nowrap">
         <span className="text-sm text-gray-600">
-          {task.duration ? `${task.duration}m` : '—'}
+          {task.duration === null || task.duration === undefined
+            ? '—'
+            : task.duration === 0
+            ? 'Due today'
+            : task.duration > 0
+            ? `${task.duration}d remaining`
+            : `${Math.abs(task.duration)}d overdue`}
         </span>
       </td>
 
