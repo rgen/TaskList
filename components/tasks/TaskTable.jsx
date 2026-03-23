@@ -29,10 +29,6 @@ export default function TaskTable() {
     setEditTaskId(null)
   }
 
-  function handleCreated(newTaskId) {
-    setEditTaskId(newTaskId)
-  }
-
   return (
     <div>
       {/* Toolbar */}
@@ -115,7 +111,6 @@ export default function TaskTable() {
         isOpen={modalOpen}
         taskId={editTaskId}
         onClose={closeModal}
-        onCreated={handleCreated}
       />
 
       {/* Delete confirmation */}
