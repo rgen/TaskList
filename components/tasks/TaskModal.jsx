@@ -8,9 +8,7 @@ import StatusSelect from './StatusSelect'
 
 export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
   const isEdit = !!taskId
-  const { data: fetchedTask, isLoading } = useTask(taskId)
-  const [newlyCreatedTask, setNewlyCreatedTask] = useState(null)
-  const task = fetchedTask ?? newlyCreatedTask
+  const { data: task, isLoading } = useTask(taskId)
 
   const createMutation = useCreateTask()
   const updateMutation = useUpdateTask()
@@ -39,10 +37,6 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
     : null
 
   useEffect(() => {
-    if (!isOpen) {
-      setNewlyCreatedTask(null)
-      return
-    }
     if (isEdit && task) {
       reset({
         name: task.name || '',
@@ -52,7 +46,6 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
       })
       setStatusValue(task.status || 'pending')
     } else if (!isEdit) {
-      setNewlyCreatedTask(null)
       reset({
         name: '',
         notes: '',
@@ -61,7 +54,7 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
       })
       setStatusValue('pending')
     }
-  }, [isOpen, isEdit, task, reset])
+  }, [isEdit, task, reset])
 
   if (!isOpen) return null
 
@@ -82,7 +75,6 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
       onClose()
     } else {
       const newTask = await createMutation.mutateAsync(payload)
-      setNewlyCreatedTask(newTask)
       onCreated?.(newTask.id)
     }
   }
@@ -193,19 +185,29 @@ export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
                 </div>
               </div>
 
-              {/* Subtasks Section — only in edit mode */}
-              {isEdit && task && (
-                <div className="border-t border-gray-100 pt-5">
-                  <SubtaskList taskId={taskId} subtasks={task.subtasks || []} />
-                </div>
-              )}
+              {/* Subtasks Section */}
+              <div className="border-t border-gray-100 pt-5">
+                {taskId ? (
+                  <SubtaskList taskId={taskId} subtasks={task?.subtasks || []} />
+                ) : (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Subtasks</h3>
+                    <p className="text-sm text-gray-400 italic">Create the task first to add subtasks.</p>
+                  </div>
+                )}
+              </div>
 
-              {/* Attachments Section — only in edit mode */}
-              {isEdit && task && (
-                <div className="border-t border-gray-100 pt-5">
-                  <AttachmentList taskId={taskId} attachments={task.attachments || []} />
-                </div>
-              )}
+              {/* Attachments Section */}
+              <div className="border-t border-gray-100 pt-5">
+                {taskId ? (
+                  <AttachmentList taskId={taskId} attachments={task?.attachments || []} />
+                ) : (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Attachments</h3>
+                    <p className="text-sm text-gray-400 italic">Create the task first to add attachments.</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
