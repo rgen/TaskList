@@ -34,6 +34,7 @@ export default function AttachmentList({ taskId, attachments = [] }) {
               {att.label || att.url}
             </a>
             <button
+              type="button"
               onClick={() => deleteMutation.mutate(att.id)}
               className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
               aria-label="Delete attachment"

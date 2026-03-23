@@ -43,6 +43,7 @@ export default function SubtaskList({ taskId, subtasks = [] }) {
               {subtask.name}
             </span>
             <button
+              type="button"
               onClick={() => handleDelete(subtask.id)}
               className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
               aria-label="Delete subtask"
