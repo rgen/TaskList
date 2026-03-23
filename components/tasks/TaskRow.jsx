@@ -143,6 +143,13 @@ export default function TaskRow({ task, onEdit, onDelete }) {
         </span>
       </td>
 
+      {/* Date Created */}
+      <td className="px-3 py-3 whitespace-nowrap">
+        <span className="text-sm text-gray-600">
+          {task.created_at ? new Date(task.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+        </span>
+      </td>
+
       {/* Actions */}
       <td className="pl-3 pr-4 py-3 whitespace-nowrap">
         <div className="flex items-center gap-1">

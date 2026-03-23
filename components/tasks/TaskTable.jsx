@@ -87,6 +87,9 @@ export default function TaskTable() {
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Duration
                 </th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Date Created
+                </th>
                 <th className="pl-3 pr-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
