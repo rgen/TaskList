@@ -5,6 +5,7 @@ import { useTask, useCreateTask, useUpdateTask } from '@/hooks/useTasks'
 import { subtasksApi, attachmentsApi } from '@/lib/api/subtasks'
 import SubtaskList from './SubtaskList'
 import AttachmentList from './AttachmentList'
+import AttachmentInput from './AttachmentInput'
 import StatusSelect from './StatusSelect'
 
 function PendingSubtaskList({ items, onAdd, onRemove }) {
@@ -66,16 +67,6 @@ function PendingSubtaskList({ items, onAdd, onRemove }) {
 }
 
 function PendingAttachmentList({ items, onAdd, onRemove }) {
-  const [url, setUrl] = useState('')
-  const [label, setLabel] = useState('')
-
-  function handleAdd() {
-    if (!url.trim()) return
-    onAdd({ url: url.trim(), label: label.trim() || null })
-    setUrl('')
-    setLabel('')
-  }
-
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-700 mb-3">Attachments</h3>
@@ -103,32 +94,7 @@ function PendingAttachmentList({ items, onAdd, onRemove }) {
           <li className="text-sm text-gray-400 italic">No attachments yet</li>
         )}
       </ul>
-      <div className="space-y-2">
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://example.com"
-          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="Label (optional)"
-            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={!url.trim()}
-            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            Add
-          </button>
-        </div>
-      </div>
+      <AttachmentInput onAdd={onAdd} />
     </div>
   )
 }
