@@ -6,7 +6,7 @@ import SubtaskList from './SubtaskList'
 import AttachmentList from './AttachmentList'
 import StatusSelect from './StatusSelect'
 
-export default function TaskModal({ isOpen, taskId, onClose }) {
+export default function TaskModal({ isOpen, taskId, onClose, onCreated }) {
   const isEdit = !!taskId
   const { data: task, isLoading } = useTask(taskId)
 
@@ -72,10 +72,11 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
 
     if (isEdit) {
       await updateMutation.mutateAsync({ id: taskId, data: payload })
+      onClose()
     } else {
-      await createMutation.mutateAsync(payload)
+      const newTask = await createMutation.mutateAsync(payload)
+      onCreated?.(newTask.id)
     }
-    onClose()
   }
 
   const mutationError = (isEdit ? updateMutation : createMutation).error
