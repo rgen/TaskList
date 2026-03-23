@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
-    const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${task.id} ORDER BY id`
+    const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${task.id} ORDER BY position, id`
     const { rows: attachments } = await sql`SELECT * FROM attachments WHERE task_id = ${task.id} ORDER BY id`
 
     addIsOverdue(task)
@@ -74,7 +74,7 @@ export async function PUT(request, { params }) {
       WHERE id = ${id}
       RETURNING *`
 
-    const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${task.id} ORDER BY id`
+    const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${task.id} ORDER BY position, id`
     const { rows: attachments } = await sql`SELECT * FROM attachments WHERE task_id = ${task.id} ORDER BY id`
 
     addIsOverdue(task)

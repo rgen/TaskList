@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
-    const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${taskId} ORDER BY id`
+    const { rows: subtasks } = await sql`SELECT * FROM subtasks WHERE task_id = ${taskId} ORDER BY position, id`
     return NextResponse.json(subtasks)
   } catch (e) {
     return NextResponse.json({ message: e.message }, { status: 500 })
@@ -37,8 +37,9 @@ export async function POST(request, { params }) {
       return NextResponse.json({ message: 'name is required' }, { status: 400 })
     }
 
+    const { rows: [{ max_pos }] } = await sql`SELECT COALESCE(MAX(position), -1) AS max_pos FROM subtasks WHERE task_id = ${taskId}`
     const { rows: [subtask] } = await sql`
-      INSERT INTO subtasks (task_id, name, completed) VALUES (${taskId}, ${name.trim()}, false)
+      INSERT INTO subtasks (task_id, name, completed, position) VALUES (${taskId}, ${name.trim()}, false, ${max_pos + 1})
       RETURNING *`
     return NextResponse.json(subtask, { status: 201 })
   } catch (e) {
