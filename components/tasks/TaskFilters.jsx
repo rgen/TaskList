@@ -20,6 +20,7 @@ export default function TaskFilters({ filters, onChange }) {
           <option value="">All</option>
           <option value="pending">Pending</option>
           <option value="completed">Completed</option>
+          <option value="archived">Archived</option>
           {customStatuses.map(s => (
             <option key={s.id} value={s.name}>{s.name}</option>
           ))}
@@ -64,6 +65,22 @@ export default function TaskFilters({ filters, onChange }) {
           <option value="asc">Asc</option>
         </select>
       </div>
+
+      {/* Show Archived toggle */}
+      <button
+        onClick={() => update('show_archived', filters.show_archived ? undefined : 'true')}
+        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+          filters.show_archived
+            ? 'bg-gray-700 text-white border-gray-700'
+            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+        </svg>
+        {filters.show_archived ? 'Hide Archived' : 'Show Archived'}
+      </button>
 
       {/* Clear */}
       {(filters.status || filters.priority) && (

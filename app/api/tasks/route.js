@@ -13,6 +13,7 @@ export async function GET(request) {
     const priority = searchParams.get('priority')
     const sort = searchParams.get('sort') || 'created_at'
     const order = searchParams.get('order') || 'desc'
+    const showArchived = searchParams.get('show_archived') === 'true'
 
     const validSorts = ['created_at', 'updated_at', 'due_date', 'priority', 'name', 'status']
     const sortCol = validSorts.includes(sort) ? sort : 'created_at'
@@ -21,6 +22,7 @@ export async function GET(request) {
     const conditions = []
     const values = []
     if (status) { conditions.push(`t.status = $${values.length + 1}`); values.push(status) }
+    else if (!showArchived) { conditions.push(`t.status != $${values.length + 1}`); values.push('archived') }
     if (priority) { conditions.push(`t.priority = $${values.length + 1}`); values.push(priority) }
 
     conditions.push(`t.user_id = $${values.length + 1}`)

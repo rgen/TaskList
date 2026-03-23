@@ -5,6 +5,7 @@ import { useStatuses, useCreateStatus } from '@/hooks/useStatuses'
 const BUILT_IN = [
   { value: 'pending', label: 'Pending' },
   { value: 'completed', label: 'Completed' },
+  { value: 'archived', label: 'Archived' },
 ]
 
 /**

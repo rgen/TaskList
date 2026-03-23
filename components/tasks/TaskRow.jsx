@@ -122,6 +122,8 @@ export default function TaskRow({ task, onEdit, onDelete }) {
               ? 'bg-green-100 text-green-700'
               : task.status === 'pending'
               ? 'bg-yellow-100 text-yellow-700'
+              : task.status === 'archived'
+              ? 'bg-gray-100 text-gray-500'
               : 'bg-blue-100 text-blue-700'
           )}
         >
