@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import clsx from 'clsx'
-import { useToggleTask } from '@/hooks/useTasks'
+import { useToggleTask, useArchiveTask } from '@/hooks/useTasks'
 import { useSubtasks, useUpdateSubtask } from '@/hooks/useSubtasks'
 import PriorityBadge from './PriorityBadge'
 import OverdueBadge from './OverdueBadge'
@@ -34,6 +34,7 @@ function InlineSubtasks({ taskId }) {
 
 export default function TaskRow({ task, onEdit, onDelete }) {
   const toggleMutation = useToggleTask()
+  const archiveMutation = useArchiveTask()
   const [subtasksOpen, setSubtasksOpen] = useState(false)
 
   function handleToggle() {
@@ -155,6 +156,20 @@ export default function TaskRow({ task, onEdit, onDelete }) {
       {/* Actions */}
       <td className="pl-3 pr-4 py-3 whitespace-nowrap">
         <div className="flex items-center gap-1">
+          {task.status !== 'archived' && (
+            <button
+              onClick={() => archiveMutation.mutate(task.id)}
+              disabled={archiveMutation.isPending}
+              className="p-1.5 text-gray-400 hover:text-yellow-600 rounded-md hover:bg-yellow-50 transition-colors disabled:opacity-50"
+              aria-label="Archive task"
+              title="Archive task"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </button>
+          )}
           <button
             onClick={() => onEdit(task.id)}
             className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors"

@@ -53,6 +53,17 @@ export function useToggleTask() {
   })
 }
 
+export function useArchiveTask() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => tasksApi.update(id, { status: 'archived' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [TASKS_KEY] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}
+
 export function useDeleteTask() {
   const qc = useQueryClient()
   return useMutation({
