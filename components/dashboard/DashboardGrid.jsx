@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { useDashboardSummary, useDashboardWeek, useDashboardTrend } from '@/hooks/useDashboard'
 import StatusDonutChart from './StatusDonutChart'
 import WeeklyBarChart from './WeeklyBarChart'
-import CompletionLineChart from './CompletionLineChart'
 import PriorityBarChart from './PriorityBarChart'
 import CategoryBarChart from './CategoryBarChart'
 import SchoolWorkSubcategoryChart from './SchoolWorkSubcategoryChart'
@@ -30,7 +29,6 @@ function ChartCard({ title, children }) {
 export default function DashboardGrid() {
   const { data: summary, isLoading: sumLoading } = useDashboardSummary()
   const { data: week, isLoading: weekLoading } = useDashboardWeek()
-  const { data: trend, isLoading: trendLoading } = useDashboardTrend()
 
   return (
     <div className="space-y-6">
@@ -63,14 +61,6 @@ export default function DashboardGrid() {
 
       {/* Charts row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ChartCard title="Completion Trend (Last 30 Days)">
-          {trendLoading ? (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
-          ) : (
-            <CompletionLineChart data={trend} />
-          )}
-        </ChartCard>
-
         <ChartCard title="Tasks by Priority">
           {sumLoading ? (
             <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
