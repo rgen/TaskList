@@ -11,6 +11,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const priority = searchParams.get('priority')
+    const category_id = searchParams.get('category_id')
+    const subcategory_id = searchParams.get('subcategory_id')
     const sort = searchParams.get('sort') || 'created_at'
     const order = searchParams.get('order') || 'desc'
     const showArchived = searchParams.get('show_archived') === 'true'
@@ -24,6 +26,8 @@ export async function GET(request) {
     if (status) { conditions.push(`t.status = $${values.length + 1}`); values.push(status) }
     else if (!showArchived) { conditions.push(`t.status != $${values.length + 1}`); values.push('archived') }
     if (priority) { conditions.push(`t.priority = $${values.length + 1}`); values.push(priority) }
+    if (category_id) { conditions.push(`t.category_id = $${values.length + 1}`); values.push(Number(category_id)) }
+    if (subcategory_id) { conditions.push(`t.subcategory_id = $${values.length + 1}`); values.push(Number(subcategory_id)) }
 
     conditions.push(`t.user_id = $${values.length + 1}`)
     values.push(Number(user.id))
@@ -34,7 +38,19 @@ export async function GET(request) {
       : sortCol === 'priority'
       ? `CASE t.priority WHEN 'low' THEN 1 WHEN 'medium' THEN 2 WHEN 'high' THEN 3 ELSE 4 END ${sortDir}`
       : `t.${sortCol} ${sortDir}`
-    const q = `SELECT t.*, (t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed') AS is_overdue, COUNT(s.id)::int AS subtask_count FROM tasks t LEFT JOIN subtasks s ON s.task_id = t.id ${where} GROUP BY t.id ORDER BY ${orderExpr}`
+    const q = `
+      SELECT t.*,
+        c.name AS category_name,
+        sc.name AS subcategory_name,
+        (t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed') AS is_overdue,
+        COUNT(s.id)::int AS subtask_count
+      FROM tasks t
+      LEFT JOIN subtasks s ON s.task_id = t.id
+      LEFT JOIN categories c ON c.id = t.category_id
+      LEFT JOIN subcategories sc ON sc.id = t.subcategory_id
+      ${where}
+      GROUP BY t.id, c.name, sc.name
+      ORDER BY ${orderExpr}`
     const { rows } = await client.query(q, values)
     return NextResponse.json(rows)
   } catch (e) {

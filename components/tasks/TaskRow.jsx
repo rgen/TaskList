@@ -145,6 +145,16 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
         </span>
       </td>
 
+      {/* Category */}
+      <td className="px-3 py-3 whitespace-nowrap">
+        <span className="text-sm text-gray-600">{task.category_name || '—'}</span>
+      </td>
+
+      {/* Subcategory */}
+      <td className="px-3 py-3 whitespace-nowrap">
+        <span className="text-sm text-gray-600">{task.subcategory_name || '—'}</span>
+      </td>
+
       {/* Date Created */}
       <td className="px-3 py-3 whitespace-nowrap">
         <span className="text-sm text-gray-600">

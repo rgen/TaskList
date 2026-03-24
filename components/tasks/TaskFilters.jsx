@@ -1,11 +1,22 @@
 'use client'
 import { useStatuses } from '@/hooks/useStatuses'
+import { useCategories } from '@/hooks/useCategories'
 
 export default function TaskFilters({ filters, onChange }) {
   const { data: customStatuses = [] } = useStatuses()
+  const { data: categories = [] } = useCategories()
+
   function update(key, value) {
-    onChange({ ...filters, [key]: value })
+    const next = { ...filters, [key]: value || undefined }
+    // Reset subcategory when category changes
+    if (key === 'category_id') next.subcategory_id = undefined
+    onChange(next)
   }
+
+  const selectedCategory = categories.find((c) => String(c.id) === String(filters.category_id))
+  const subcategories = selectedCategory?.subcategories || []
+
+  const hasActiveFilters = filters.status || filters.priority || filters.category_id || filters.subcategory_id
 
   return (
     <div className="flex flex-wrap gap-3 items-center">
@@ -14,7 +25,7 @@ export default function TaskFilters({ filters, onChange }) {
         <label className="text-sm font-medium text-gray-600">Status</label>
         <select
           value={filters.status || ''}
-          onChange={(e) => update('status', e.target.value || undefined)}
+          onChange={(e) => update('status', e.target.value)}
           className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All</option>
@@ -32,7 +43,7 @@ export default function TaskFilters({ filters, onChange }) {
         <label className="text-sm font-medium text-gray-600">Priority</label>
         <select
           value={filters.priority || ''}
-          onChange={(e) => update('priority', e.target.value || undefined)}
+          onChange={(e) => update('priority', e.target.value)}
           className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All</option>
@@ -41,6 +52,40 @@ export default function TaskFilters({ filters, onChange }) {
           <option value="low">Low</option>
         </select>
       </div>
+
+      {/* Category filter */}
+      {categories.length > 0 && (
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-600">Category</label>
+          <select
+            value={filters.category_id || ''}
+            onChange={(e) => update('category_id', e.target.value)}
+            className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Subcategory filter — only shown when a category with subcategories is selected */}
+      {subcategories.length > 0 && (
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-600">Subcategory</label>
+          <select
+            value={filters.subcategory_id || ''}
+            onChange={(e) => update('subcategory_id', e.target.value)}
+            className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All</option>
+            {subcategories.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Sort */}
       <div className="flex items-center gap-2">
@@ -68,7 +113,7 @@ export default function TaskFilters({ filters, onChange }) {
 
       {/* Show Archived toggle */}
       <button
-        onClick={() => update('show_archived', filters.show_archived ? undefined : 'true')}
+        onClick={() => update('show_archived', filters.show_archived ? '' : 'true')}
         className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors ${
           filters.show_archived
             ? 'bg-gray-700 text-white border-gray-700'
@@ -83,7 +128,7 @@ export default function TaskFilters({ filters, onChange }) {
       </button>
 
       {/* Clear */}
-      {(filters.status || filters.priority) && (
+      {hasActiveFilters && (
         <button
           onClick={() => onChange({ sort: filters.sort, order: filters.order })}
           className="text-sm text-blue-600 hover:underline"
