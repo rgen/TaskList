@@ -121,7 +121,6 @@ export default function TaskTable() {
         <DeleteConfirm
           taskId={deleteTarget.id}
           taskName={deleteTarget.name}
-          taskSource={deleteTarget.source}
           onClose={() => setDeleteTarget(null)}
         />
       )}

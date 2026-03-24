@@ -48,7 +48,7 @@ export async function PUT(request, { params }) {
     }
 
     const body = await request.json()
-    const { name, notes, status, priority, due_date, duration, source } = body
+    const { name, notes, status, priority, due_date, duration } = body
 
     if (!name || name.trim() === '') {
       return NextResponse.json({ message: 'name is required' }, { status: 400 })
@@ -69,7 +69,6 @@ export async function PUT(request, { params }) {
         priority = ${priority || existing.priority},
         due_date = ${due_date || null},
         duration = ${duration || null},
-        source = ${source !== undefined ? (source || null) : existing.source},
         completed_at = ${completed_at},
         updated_at = NOW()
       WHERE id = ${id}
@@ -94,13 +93,9 @@ export async function DELETE(request, { params }) {
 
   try {
     const { id } = params
-    const { rows: [task] } = await sql`SELECT id, user_id, source FROM tasks WHERE id = ${id}`
+    const { rows: [task] } = await sql`SELECT id, user_id FROM tasks WHERE id = ${id}`
     if (!task || task.user_id !== Number(user.id)) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 })
-    }
-
-    if (task.source === 'schoology') {
-      return NextResponse.json({ message: 'Schoology tasks cannot be deleted.' }, { status: 403 })
     }
 
     await sql`DELETE FROM tasks WHERE id = ${id}`

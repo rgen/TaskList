@@ -44,11 +44,11 @@ export async function POST(request) {
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { name, notes, status = 'pending', priority = 'medium', due_date, duration, source } = await request.json()
+    const { name, notes, status = 'pending', priority = 'medium', due_date, duration } = await request.json()
     if (!name || name.trim() === '') return NextResponse.json({ message: 'Name is required' }, { status: 400 })
     const { rows } = await sql`
-      INSERT INTO tasks (name, notes, status, priority, due_date, duration, source, user_id)
-      VALUES (${name.trim()}, ${notes || null}, ${status}, ${priority}, ${due_date || null}, ${duration || null}, ${source || null}, ${Number(user.id)})
+      INSERT INTO tasks (name, notes, status, priority, due_date, duration, user_id)
+      VALUES (${name.trim()}, ${notes || null}, ${status}, ${priority}, ${due_date || null}, ${duration || null}, ${Number(user.id)})
       RETURNING *`
     return NextResponse.json({ ...rows[0], subtasks: [], attachments: [] }, { status: 201 })
   } catch (e) {
