@@ -33,13 +33,18 @@ export default function WeeklyDueDateChart({ data }) {
 
   const bucketMap = Object.fromEntries((data ?? []).map((r) => [r.bucket, r.count]))
 
-  // weekOffset: overdue has its own nav; this_week=0, next_week=1, week_3=2, week_4=3, week_5plus=4
-  const weekOffsets = { this_week: 0, next_week: 1, week_3: 2, week_4: 3, week_5plus: 4 }
-  const chartData = BUCKETS.map((b) => ({
-    ...b,
-    count: bucketMap[b.key] ?? 0,
-    nav: b.nav ?? `/tasks?week_start=${getWeekStart(weekOffsets[b.key])}`,
-  }))
+  const weekOffsets = { this_week: 0, next_week: 1, week_3: 2, week_4: 3 }
+  const chartData = BUCKETS.map((b) => {
+    let nav = b.nav
+    if (!nav) {
+      if (b.key === 'week_5plus') {
+        nav = `/tasks?due_date_from=${getWeekStart(4)}`
+      } else {
+        nav = `/tasks?week_start=${getWeekStart(weekOffsets[b.key])}`
+      }
+    }
+    return { ...b, count: bucketMap[b.key] ?? 0, nav }
+  })
 
   const hasData = chartData.some((d) => d.count > 0)
   if (!hasData) {
