@@ -5,6 +5,7 @@ import StatusDonutChart from './StatusDonutChart'
 import WeeklyBarChart from './WeeklyBarChart'
 import CompletionLineChart from './CompletionLineChart'
 import PriorityBarChart from './PriorityBarChart'
+import CategoryBarChart from './CategoryBarChart'
 
 function StatCard({ label, value, colorClass = 'text-gray-900', href }) {
   const content = (
@@ -74,6 +75,17 @@ export default function DashboardGrid() {
             <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
           ) : (
             <PriorityBarChart byPriority={summary?.byPriority} />
+          )}
+        </ChartCard>
+      </div>
+
+      {/* Charts row 3 */}
+      <div className="grid grid-cols-1 gap-4">
+        <ChartCard title="Tasks by Category">
+          {sumLoading ? (
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
+          ) : (
+            <CategoryBarChart byCategory={summary?.byCategory} />
           )}
         </ChartCard>
       </div>

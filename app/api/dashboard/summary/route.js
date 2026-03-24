@@ -16,6 +16,13 @@ export async function GET(request) {
     const { rows: [{ count: medium }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'medium' AND status != 'archived'`
     const { rows: [{ count: low }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'low' AND status != 'archived'`
     const { rows: byStatusRows } = await sql`SELECT status, COUNT(*)::int as count FROM tasks WHERE user_id = ${userId} AND status != 'archived' GROUP BY status`
+    const { rows: byCategoryRows } = await sql`
+      SELECT COALESCE(c.name, 'Uncategorized') as name, c.id as category_id, COUNT(t.id)::int as count
+      FROM tasks t
+      LEFT JOIN categories c ON c.id = t.category_id
+      WHERE t.user_id = ${userId} AND t.status != 'archived'
+      GROUP BY c.id, c.name
+      ORDER BY count DESC`
 
     return NextResponse.json({
       total: +total,
@@ -24,6 +31,7 @@ export async function GET(request) {
       overdue: +overdue,
       byPriority: { high: +high, medium: +medium, low: +low },
       byStatus: byStatusRows,
+      byCategory: byCategoryRows,
     })
   } catch (e) {
     return NextResponse.json({ message: e.message }, { status: 500 })
