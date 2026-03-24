@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recha
 const COLORS = {
   high: '#f43f5e',
   medium: '#e879f9',
-  low: '#a3e635',
+  low: '#65a30d',
 }
 
 export default function PriorityBarChart({ byPriority }) {
