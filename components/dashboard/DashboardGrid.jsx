@@ -6,6 +6,7 @@ import WeeklyBarChart from './WeeklyBarChart'
 import PriorityBarChart from './PriorityBarChart'
 import CategoryBarChart from './CategoryBarChart'
 import SchoolWorkSubcategoryChart from './SchoolWorkSubcategoryChart'
+import WeeklyDueDateChart from './WeeklyDueDateChart'
 
 function StatCard({ label, value, colorClass = 'text-gray-900', href }) {
   const content = (
@@ -85,6 +86,17 @@ export default function DashboardGrid() {
             <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
           ) : (
             <SchoolWorkSubcategoryChart data={summary?.schoolWorkSubcategories} />
+          )}
+        </ChartCard>
+      </div>
+
+      {/* Charts row 4 */}
+      <div className="grid grid-cols-1 gap-4">
+        <ChartCard title="Tasks Due by Week">
+          {sumLoading ? (
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
+          ) : (
+            <WeeklyDueDateChart data={summary?.byWeek} />
           )}
         </ChartCard>
       </div>

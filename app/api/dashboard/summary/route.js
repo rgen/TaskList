@@ -24,6 +24,15 @@ export async function GET(request) {
       GROUP BY c.id, c.name
       ORDER BY count DESC`
 
+    const { rows: byWeekRows } = await sql`
+      SELECT
+        TO_CHAR(DATE_TRUNC('week', due_date::date), 'YYYY-MM-DD') as week_start,
+        COUNT(*)::int as count
+      FROM tasks
+      WHERE user_id = ${userId} AND status != 'archived' AND due_date IS NOT NULL
+      GROUP BY DATE_TRUNC('week', due_date::date)
+      ORDER BY week_start ASC`
+
     const { rows: schoolWorkSubRows } = await sql`
       SELECT sc.name, sc.id as subcategory_id, COUNT(t.id)::int as count
       FROM tasks t
