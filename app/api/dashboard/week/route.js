@@ -14,7 +14,7 @@ export async function GET(request) {
       d.setDate(d.getDate() + i)
       const date = d.toISOString().slice(0, 10)
       const day = d.toLocaleDateString('en-US', { weekday: 'short' })
-      const { rows: [{ count }] } = await sql`SELECT COUNT(*) FROM tasks WHERE due_date = ${date} AND user_id = ${userId}`
+      const { rows: [{ count }] } = await sql`SELECT COUNT(*) FROM tasks WHERE due_date = ${date} AND user_id = ${userId} AND status != 'archived'`
       days.push({ date, day, count: +count })
     }
     return NextResponse.json(days)

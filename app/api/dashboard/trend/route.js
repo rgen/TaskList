@@ -11,7 +11,7 @@ export async function GET(request) {
     const { rows } = await sql`
       SELECT TO_CHAR(completed_at, 'YYYY-MM-DD') as date, COUNT(*) as count
       FROM tasks
-      WHERE completed_at IS NOT NULL AND completed_at >= NOW() - INTERVAL '30 days' AND user_id = ${userId}
+      WHERE completed_at IS NOT NULL AND completed_at >= NOW() - INTERVAL '30 days' AND user_id = ${userId} AND status != 'archived'
       GROUP BY TO_CHAR(completed_at, 'YYYY-MM-DD')
       ORDER BY date ASC`
 
