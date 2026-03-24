@@ -26,12 +26,18 @@ export async function GET(request) {
 
     const { rows: byWeekRows } = await sql`
       SELECT
-        TO_CHAR(DATE_TRUNC('week', due_date::date), 'YYYY-MM-DD') as week_start,
+        CASE
+          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) THEN 'overdue'
+          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '7 days' THEN 'this_week'
+          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '14 days' THEN 'next_week'
+          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '21 days' THEN 'week_3'
+          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '28 days' THEN 'week_4'
+          ELSE 'week_5plus'
+        END AS bucket,
         COUNT(*)::int as count
       FROM tasks
-      WHERE user_id = ${userId} AND status != 'archived' AND due_date IS NOT NULL
-      GROUP BY DATE_TRUNC('week', due_date::date)
-      ORDER BY week_start ASC`
+      WHERE user_id = ${userId} AND status != 'archived' AND status != 'completed' AND due_date IS NOT NULL
+      GROUP BY bucket`
 
     const { rows: schoolWorkSubRows } = await sql`
       SELECT sc.name, sc.id as subcategory_id, COUNT(t.id)::int as count
