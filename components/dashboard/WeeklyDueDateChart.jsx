@@ -11,12 +11,12 @@ const BUCKETS = [
   { key: 'week_5plus',label: 'Week 5+',    color: '#6366f1', nav: null },
 ]
 
-function getWeekNav(weekOffset) {
+function getWeekStart(weekOffset) {
   const now = new Date()
   const dayOfWeek = now.getDay()
   const monday = new Date(now)
   monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + weekOffset * 7)
-  return `/tasks?due_date=${monday.toISOString().slice(0, 10)}`
+  return monday.toISOString().slice(0, 10)
 }
 
 function CustomXAxisTick({ x, y, payload }) {
@@ -33,10 +33,12 @@ export default function WeeklyDueDateChart({ data }) {
 
   const bucketMap = Object.fromEntries((data ?? []).map((r) => [r.bucket, r.count]))
 
-  const chartData = BUCKETS.map((b, i) => ({
+  // weekOffset: overdue has its own nav; this_week=0, next_week=1, week_3=2, week_4=3, week_5plus=4
+  const weekOffsets = { this_week: 0, next_week: 1, week_3: 2, week_4: 3, week_5plus: 4 }
+  const chartData = BUCKETS.map((b) => ({
     ...b,
     count: bucketMap[b.key] ?? 0,
-    nav: b.nav ?? getWeekNav(i),
+    nav: b.nav ?? `/tasks?week_start=${getWeekStart(weekOffsets[b.key])}`,
   }))
 
   const hasData = chartData.some((d) => d.count > 0)

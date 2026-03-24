@@ -14,6 +14,7 @@ export async function GET(request) {
     const category_id = searchParams.get('category_id')
     const subcategory_id = searchParams.get('subcategory_id')
     const due_date_exact = searchParams.get('due_date')
+    const week_start = searchParams.get('week_start')
     const overdue = searchParams.get('overdue')
     const sort = searchParams.get('sort') || 'created_at'
     const order = searchParams.get('order') || 'desc'
@@ -31,6 +32,12 @@ export async function GET(request) {
     if (category_id) { conditions.push(`t.category_id = $${values.length + 1}`); values.push(Number(category_id)) }
     if (subcategory_id) { conditions.push(`t.subcategory_id = $${values.length + 1}`); values.push(Number(subcategory_id)) }
     if (due_date_exact) { conditions.push(`t.due_date = $${values.length + 1}`); values.push(due_date_exact) }
+    if (week_start) {
+      conditions.push(`t.due_date::date >= $${values.length + 1}::date AND t.due_date::date < $${values.length + 2}::date`)
+      values.push(week_start)
+      const end = new Date(week_start); end.setDate(end.getDate() + 7)
+      values.push(end.toISOString().slice(0, 10))
+    }
     if (overdue === 'true') { conditions.push(`t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed'`) }
 
     conditions.push(`t.user_id = $${values.length + 1}`)
