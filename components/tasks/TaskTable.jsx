@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useTasks } from '@/hooks/useTasks'
 import TaskRow from './TaskRow'
+import GridEditRow from './GridEditRow'
 import TaskModal from './TaskModal'
 import TaskFilters from './TaskFilters'
 import DeleteConfirm from './DeleteConfirm'
@@ -13,6 +14,7 @@ export default function TaskTable() {
   const [editTaskId, setEditTaskId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [archiveTarget, setArchiveTarget] = useState(null)
+  const [gridEditMode, setGridEditMode] = useState(false)
 
   const { data: tasks = [], isLoading, isError, error } = useTasks(filters)
 
@@ -36,15 +38,31 @@ export default function TaskTable() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <TaskFilters filters={filters} onChange={setFilters} />
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Task
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setGridEditMode((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
+              gridEditMode
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+            </svg>
+            {gridEditMode ? 'Done Editing' : 'Grid Edit'}
+          </button>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Task
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -104,7 +122,14 @@ export default function TaskTable() {
               </tr>
             </thead>
             <tbody>
-              {tasks.map((task) => (
+              {tasks.map((task) => gridEditMode ? (
+                <GridEditRow
+                  key={task.id}
+                  task={task}
+                  onDelete={setDeleteTarget}
+                  onArchive={setArchiveTarget}
+                />
+              ) : (
                 <TaskRow
                   key={task.id}
                   task={task}
