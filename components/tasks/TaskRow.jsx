@@ -2,10 +2,13 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import clsx from 'clsx'
-import { useToggleTask } from '@/hooks/useTasks'
+import { useToggleTask, useArchiveTask } from '@/hooks/useTasks'
 import { useSubtasks, useUpdateSubtask } from '@/hooks/useSubtasks'
+import { tasksApi } from '@/lib/api/tasks'
+import { useQueryClient } from '@tanstack/react-query'
 import PriorityBadge from './PriorityBadge'
 import OverdueBadge from './OverdueBadge'
+import LogHoursModal from '@/components/goals/LogHoursModal'
 
 function InlineSubtasks({ taskId }) {
   const { data: subtasks = [], isLoading } = useSubtasks(taskId)
@@ -35,9 +38,28 @@ function InlineSubtasks({ taskId }) {
 export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   const toggleMutation = useToggleTask()
   const [subtasksOpen, setSubtasksOpen] = useState(false)
+  const [showLogHours, setShowLogHours] = useState(false)
+  const qc = useQueryClient()
 
   function handleToggle() {
+    // If a goal task is being marked complete, show log hours modal
+    if (task.goal_id && task.status !== 'completed') {
+      setShowLogHours(true)
+    } else {
+      toggleMutation.mutate(task.id)
+    }
+  }
+
+  async function handleLogHoursConfirm(hours) {
+    await tasksApi.patch(task.id, { status: 'completed', hours_logged: hours })
+    qc.invalidateQueries({ queryKey: ['tasks'] })
+    qc.invalidateQueries({ queryKey: ['goals-progress'] })
+    setShowLogHours(false)
+  }
+
+  async function handleLogHoursSkip() {
     toggleMutation.mutate(task.id)
+    setShowLogHours(false)
   }
 
   function formatDate(dateStr) {
@@ -50,6 +72,7 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   }
 
   return (
+    <>
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
       {/* Checkbox */}
       <td className="pl-4 pr-2 py-3 w-10">
@@ -79,6 +102,13 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
           )}
           <div className="flex gap-1.5 flex-wrap">
             {task.is_overdue && <OverdueBadge />}
+            {task.goal_id && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">
+                {task.hours_logged != null
+                  ? `${task.hours_logged}h / ${task.hours_goal ?? '?'}h`
+                  : task.hours_goal != null ? `Goal: ${task.hours_goal}h` : 'Goal task'}
+              </span>
+            )}
           </div>
           {task.subtask_count > 0 && (
             <>
@@ -195,5 +225,14 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
         </div>
       </td>
     </tr>
+    {showLogHours && (
+      <LogHoursModal
+        task={task}
+        onConfirm={handleLogHoursConfirm}
+        onSkip={handleLogHoursSkip}
+        onClose={() => setShowLogHours(false)}
+      />
+    )}
+  </>
   )
 }

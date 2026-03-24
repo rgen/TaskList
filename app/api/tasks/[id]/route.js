@@ -101,10 +101,29 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
-    const { status } = await request.json()
-    const { rows: [task] } = await sql`
-      UPDATE tasks SET status = ${status}, updated_at = NOW()
-      WHERE id = ${id} RETURNING *`
+    const body = await request.json()
+    const { status, hours_logged } = body
+
+    let task
+    if (status !== undefined && hours_logged !== undefined) {
+      const completed_at = status === 'completed' && existing.status !== 'completed'
+        ? new Date().toISOString() : existing.completed_at
+      ;({ rows: [task] } = await sql`
+        UPDATE tasks SET status = ${status}, hours_logged = ${Number(hours_logged)}, completed_at = ${completed_at}, updated_at = NOW()
+        WHERE id = ${id} RETURNING *`)
+    } else if (status !== undefined) {
+      const completed_at = status === 'completed' && existing.status !== 'completed'
+        ? new Date().toISOString() : existing.completed_at
+      ;({ rows: [task] } = await sql`
+        UPDATE tasks SET status = ${status}, completed_at = ${completed_at}, updated_at = NOW()
+        WHERE id = ${id} RETURNING *`)
+    } else if (hours_logged !== undefined) {
+      ;({ rows: [task] } = await sql`
+        UPDATE tasks SET hours_logged = ${Number(hours_logged)}, updated_at = NOW()
+        WHERE id = ${id} RETURNING *`)
+    } else {
+      return NextResponse.json({ message: 'No fields provided' }, { status: 400 })
+    }
 
     return NextResponse.json(task)
   } catch (e) {
