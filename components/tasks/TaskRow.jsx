@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import clsx from 'clsx'
-import { useToggleTask, useArchiveTask } from '@/hooks/useTasks'
+import { useToggleTask } from '@/hooks/useTasks'
 import { useSubtasks, useUpdateSubtask } from '@/hooks/useSubtasks'
 import PriorityBadge from './PriorityBadge'
 import OverdueBadge from './OverdueBadge'
@@ -32,9 +32,8 @@ function InlineSubtasks({ taskId }) {
   )
 }
 
-export default function TaskRow({ task, onEdit, onDelete }) {
+export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   const toggleMutation = useToggleTask()
-  const archiveMutation = useArchiveTask()
   const [subtasksOpen, setSubtasksOpen] = useState(false)
 
   function handleToggle() {
@@ -158,9 +157,8 @@ export default function TaskRow({ task, onEdit, onDelete }) {
         <div className="flex items-center gap-1">
           {task.status !== 'archived' && (
             <button
-              onClick={() => archiveMutation.mutate(task.id)}
-              disabled={archiveMutation.isPending}
-              className="p-1.5 text-gray-400 hover:text-yellow-600 rounded-md hover:bg-yellow-50 transition-colors disabled:opacity-50"
+              onClick={() => onArchive(task)}
+              className="p-1.5 text-gray-400 hover:text-yellow-600 rounded-md hover:bg-yellow-50 transition-colors"
               aria-label="Archive task"
               title="Archive task"
             >

@@ -5,12 +5,14 @@ import TaskRow from './TaskRow'
 import TaskModal from './TaskModal'
 import TaskFilters from './TaskFilters'
 import DeleteConfirm from './DeleteConfirm'
+import ArchiveConfirm from './ArchiveConfirm'
 
 export default function TaskTable() {
   const [filters, setFilters] = useState({ sort: 'created_at', order: 'desc' })
   const [modalOpen, setModalOpen] = useState(false)
   const [editTaskId, setEditTaskId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [archiveTarget, setArchiveTarget] = useState(null)
 
   const { data: tasks = [], isLoading, isError, error } = useTasks(filters)
 
@@ -102,6 +104,7 @@ export default function TaskTable() {
                   task={task}
                   onEdit={openEdit}
                   onDelete={setDeleteTarget}
+                  onArchive={setArchiveTarget}
                 />
               ))}
             </tbody>
@@ -122,6 +125,15 @@ export default function TaskTable() {
           taskId={deleteTarget.id}
           taskName={deleteTarget.name}
           onClose={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* Archive confirmation */}
+      {archiveTarget && (
+        <ArchiveConfirm
+          taskId={archiveTarget.id}
+          taskName={archiveTarget.name}
+          onClose={() => setArchiveTarget(null)}
         />
       )}
     </div>
