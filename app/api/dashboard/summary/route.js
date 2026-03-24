@@ -15,6 +15,7 @@ export async function GET(request) {
     const { rows: [{ count: high }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'high' AND status != 'archived'`
     const { rows: [{ count: medium }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'medium' AND status != 'archived'`
     const { rows: [{ count: low }] } = await sql`SELECT COUNT(*) FROM tasks WHERE user_id = ${userId} AND priority = 'low' AND status != 'archived'`
+    const { rows: byStatusRows } = await sql`SELECT status, COUNT(*)::int as count FROM tasks WHERE user_id = ${userId} AND status != 'archived' GROUP BY status`
 
     return NextResponse.json({
       total: +total,
@@ -22,6 +23,7 @@ export async function GET(request) {
       pending: +pending,
       overdue: +overdue,
       byPriority: { high: +high, medium: +medium, low: +low },
+      byStatus: byStatusRows,
     })
   } catch (e) {
     return NextResponse.json({ message: e.message }, { status: 500 })

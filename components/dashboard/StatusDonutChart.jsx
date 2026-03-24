@@ -2,28 +2,30 @@
 import { useRouter } from 'next/navigation'
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts'
 
-const COLORS = {
-  Completed: '#22c55e',
-  Pending: '#f59e0b',
-  Overdue: '#ef4444',
+const STATUS_COLORS = {
+  completed: '#22c55e',
+  pending: '#f59e0b',
+  in_progress: '#3b82f6',
 }
 
-const LINKS = {
-  Completed: '/tasks?status=completed',
-  Pending: '/tasks?status=pending',
-  Overdue: '/tasks?overdue=true',
+const FALLBACK_COLORS = ['#8b5cf6', '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#64748b']
+
+function getColor(status, index) {
+  return STATUS_COLORS[status] || FALLBACK_COLORS[index % FALLBACK_COLORS.length]
+}
+
+function capitalize(str) {
+  return str.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 export default function StatusDonutChart({ summary }) {
   const router = useRouter()
 
-  if (!summary) return null
+  if (!summary?.byStatus) return null
 
-  const data = [
-    { name: 'Completed', value: summary.completed },
-    { name: 'Pending', value: summary.pending - summary.overdue },
-    { name: 'Overdue', value: summary.overdue },
-  ].filter((d) => d.value > 0)
+  const data = summary.byStatus
+    .filter((s) => s.count > 0)
+    .map((s) => ({ name: capitalize(s.status), status: s.status, value: s.count }))
 
   if (data.length === 0) {
     return <div className="flex items-center justify-center h-48 text-gray-400 text-sm">No data yet</div>
@@ -40,11 +42,11 @@ export default function StatusDonutChart({ summary }) {
           outerRadius={85}
           paddingAngle={3}
           dataKey="value"
-          onClick={(entry) => router.push(LINKS[entry.name])}
+          onClick={(entry) => router.push(`/tasks?status=${entry.status}`)}
           style={{ cursor: 'pointer' }}
         >
-          {data.map((entry) => (
-            <Cell key={entry.name} fill={COLORS[entry.name] || '#94a3b8'} />
+          {data.map((entry, index) => (
+            <Cell key={entry.status} fill={getColor(entry.status, index)} />
           ))}
         </Pie>
         <Tooltip
