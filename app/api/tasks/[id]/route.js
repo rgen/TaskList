@@ -87,6 +87,28 @@ export async function PUT(request, { params }) {
   }
 }
 
+export async function PATCH(request, { params }) {
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const { id } = params
+    const { rows: [existing] } = await sql`SELECT * FROM tasks WHERE id = ${id}`
+    if (!existing || existing.user_id !== Number(user.id)) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
+    }
+
+    const { status } = await request.json()
+    const { rows: [task] } = await sql`
+      UPDATE tasks SET status = ${status}, updated_at = NOW()
+      WHERE id = ${id} RETURNING *`
+
+    return NextResponse.json(task)
+  } catch (e) {
+    return NextResponse.json({ message: e.message }, { status: 500 })
+  }
+}
+
 export async function DELETE(request, { params }) {
   const user = await getUser(request)
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
