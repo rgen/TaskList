@@ -113,13 +113,9 @@ export default function StatusSelect({ value, onChange, className = '' }) {
       {BUILT_IN.map(s => (
         <option key={s.value} value={s.value}>{s.label}</option>
       ))}
-      {customStatuses.length > 0 && (
-        <optgroup label="Custom">
-          {customStatuses.map(s => (
-            <option key={s.id} value={s.name}>{s.name}</option>
-          ))}
-        </optgroup>
-      )}
+      {customStatuses.map(s => (
+        <option key={s.id} value={s.name}>{s.name}</option>
+      ))}
       <option disabled>──────────</option>
       <option value="__add__">+ Add Status…</option>
     </select>
