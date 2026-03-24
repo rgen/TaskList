@@ -32,7 +32,7 @@ export async function GET(request) {
     const orderExpr = sortCol === 'due_date'
       ? `t.due_date::date ${sortDir} NULLS LAST`
       : sortCol === 'priority'
-      ? `CASE t.priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END ${sortDir}`
+      ? `CASE t.priority WHEN 'low' THEN 1 WHEN 'medium' THEN 2 WHEN 'high' THEN 3 ELSE 4 END ${sortDir}`
       : `t.${sortCol} ${sortDir}`
     const q = `SELECT t.*, (t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed') AS is_overdue, COUNT(s.id)::int AS subtask_count FROM tasks t LEFT JOIN subtasks s ON s.task_id = t.id ${where} GROUP BY t.id ORDER BY ${orderExpr}`
     const { rows } = await client.query(q, values)
