@@ -50,6 +50,7 @@ export async function GET(request) {
       byPriority: { high: +high, medium: +medium, low: +low },
       byStatus: byStatusRows,
       byCategory: byCategoryRows,
+      byWeek: byWeekRows,
       schoolWorkSubcategories: schoolWorkSubRows,
     })
   } catch (e) {
