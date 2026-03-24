@@ -13,7 +13,7 @@ import {
 function InlineInput({ defaultValue = '', onSave, onCancel, placeholder = 'Nameâ€¦' }) {
   const [value, setValue] = useState(defaultValue)
   return (
-    <div className="flex items-center gap-2">
+    <div className="space-y-2">
       <input
         autoFocus
         type="text"
@@ -24,22 +24,24 @@ function InlineInput({ defaultValue = '', onSave, onCancel, placeholder = 'Nameâ
           if (e.key === 'Escape') onCancel()
         }}
         placeholder={placeholder}
-        className="flex-1 text-sm border border-blue-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full text-sm border border-blue-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
-      <button
-        type="button"
-        onClick={() => { if (value.trim()) onSave(value.trim()) }}
-        className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        Save
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-      >
-        Cancel
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => { if (value.trim()) onSave(value.trim()) }}
+          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   )
 }
