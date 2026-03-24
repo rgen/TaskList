@@ -164,12 +164,6 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         )}
       </td>
 
-      {/* Date Created (read-only) */}
-      <td className="px-3 py-2 whitespace-nowrap">
-        <span className="text-sm text-gray-400">
-          {task.created_at ? new Date(task.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
-        </span>
-      </td>
 
       {/* Actions */}
       <td className="pl-3 pr-4 py-2 whitespace-nowrap">
