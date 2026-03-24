@@ -29,7 +29,10 @@ export async function GET(request) {
     values.push(Number(user.id))
 
     const where = `WHERE ${conditions.join(' AND ')}`
-    const q = `SELECT t.*, (t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed') AS is_overdue, COUNT(s.id)::int AS subtask_count FROM tasks t LEFT JOIN subtasks s ON s.task_id = t.id ${where} GROUP BY t.id ORDER BY t.${sortCol} ${sortDir}`
+    const orderExpr = sortCol === 'due_date'
+      ? `t.due_date::date ${sortDir} NULLS LAST`
+      : `t.${sortCol} ${sortDir}`
+    const q = `SELECT t.*, (t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed') AS is_overdue, COUNT(s.id)::int AS subtask_count FROM tasks t LEFT JOIN subtasks s ON s.task_id = t.id ${where} GROUP BY t.id ORDER BY ${orderExpr}`
     const { rows } = await client.query(q, values)
     return NextResponse.json(rows)
   } catch (e) {
