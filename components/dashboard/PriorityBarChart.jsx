@@ -3,9 +3,9 @@ import { useRouter } from 'next/navigation'
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts'
 
 const COLORS = {
-  high: '#ef4444',
-  medium: '#f59e0b',
-  low: '#94a3b8',
+  high: '#f43f5e',
+  medium: '#e879f9',
+  low: '#a3e635',
 }
 
 export default function PriorityBarChart({ byPriority }) {
