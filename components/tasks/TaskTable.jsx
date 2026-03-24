@@ -8,8 +8,8 @@ import TaskFilters from './TaskFilters'
 import DeleteConfirm from './DeleteConfirm'
 import ArchiveConfirm from './ArchiveConfirm'
 
-export default function TaskTable() {
-  const [filters, setFilters] = useState({ sort: 'created_at', order: 'desc' })
+export default function TaskTable({ initialFilters = {} }) {
+  const [filters, setFilters] = useState({ sort: 'created_at', order: 'desc', ...initialFilters })
   const [modalOpen, setModalOpen] = useState(false)
   const [editTaskId, setEditTaskId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)

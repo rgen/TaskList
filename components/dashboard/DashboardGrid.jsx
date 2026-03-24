@@ -1,17 +1,19 @@
 'use client'
+import Link from 'next/link'
 import { useDashboardSummary, useDashboardWeek, useDashboardTrend } from '@/hooks/useDashboard'
 import StatusDonutChart from './StatusDonutChart'
 import WeeklyBarChart from './WeeklyBarChart'
 import CompletionLineChart from './CompletionLineChart'
 import PriorityBarChart from './PriorityBarChart'
 
-function StatCard({ label, value, colorClass = 'text-gray-900', bg = 'bg-white' }) {
-  return (
-    <div className={`${bg} rounded-xl border border-gray-200 shadow-sm p-5`}>
+function StatCard({ label, value, colorClass = 'text-gray-900', href }) {
+  const content = (
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm p-5 transition-colors ${href ? 'hover:border-blue-300 hover:shadow-md cursor-pointer' : ''}`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">{label}</p>
       <p className={`text-3xl font-bold ${colorClass}`}>{value ?? '—'}</p>
     </div>
   )
+  return href ? <Link href={href}>{content}</Link> : content
 }
 
 function ChartCard({ title, children }) {
@@ -32,22 +34,10 @@ export default function DashboardGrid() {
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Tasks" value={sumLoading ? '…' : summary?.total} />
-        <StatCard
-          label="Completed"
-          value={sumLoading ? '…' : summary?.completed}
-          colorClass="text-green-600"
-        />
-        <StatCard
-          label="Pending"
-          value={sumLoading ? '…' : summary?.pending}
-          colorClass="text-amber-600"
-        />
-        <StatCard
-          label="Overdue"
-          value={sumLoading ? '…' : summary?.overdue}
-          colorClass="text-red-600"
-        />
+        <StatCard label="Total Tasks" value={sumLoading ? '…' : summary?.total} href="/tasks" />
+        <StatCard label="Completed" value={sumLoading ? '…' : summary?.completed} colorClass="text-green-600" href="/tasks?status=completed" />
+        <StatCard label="Pending" value={sumLoading ? '…' : summary?.pending} colorClass="text-amber-600" href="/tasks?status=pending" />
+        <StatCard label="Overdue" value={sumLoading ? '…' : summary?.overdue} colorClass="text-red-600" href="/tasks?overdue=true" />
       </div>
 
       {/* Charts row 1 */}

@@ -16,7 +16,7 @@ export default function TaskFilters({ filters, onChange }) {
   const selectedCategory = categories.find((c) => String(c.id) === String(filters.category_id))
   const subcategories = selectedCategory?.subcategories || []
 
-  const hasActiveFilters = filters.status || filters.priority || filters.category_id || filters.subcategory_id
+  const hasActiveFilters = filters.status || filters.priority || filters.category_id || filters.subcategory_id || filters.overdue || filters.due_date
 
   return (
     <div className="flex flex-wrap gap-3 items-center">

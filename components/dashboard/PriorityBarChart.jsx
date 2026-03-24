@@ -1,4 +1,5 @@
 'use client'
+import { useRouter } from 'next/navigation'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from 'recharts'
 
 const COLORS = {
@@ -8,6 +9,8 @@ const COLORS = {
 }
 
 export default function PriorityBarChart({ byPriority }) {
+  const router = useRouter()
+
   if (!byPriority) return null
 
   const data = [
@@ -17,11 +20,7 @@ export default function PriorityBarChart({ byPriority }) {
   ]
 
   if (data.every((d) => d.value === 0)) {
-    return (
-      <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
-        No data yet
-      </div>
-    )
+    return <div className="flex items-center justify-center h-48 text-gray-400 text-sm">No data yet</div>
   }
 
   return (
@@ -30,6 +29,8 @@ export default function PriorityBarChart({ byPriority }) {
         layout="vertical"
         data={data}
         margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+        onClick={(e) => { if (e?.activePayload?.[0]) router.push(`/tasks?priority=${e.activePayload[0].payload.key}`) }}
+        style={{ cursor: 'pointer' }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
         <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
