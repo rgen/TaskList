@@ -24,6 +24,15 @@ export async function GET(request) {
       GROUP BY c.id, c.name
       ORDER BY count DESC`
 
+    const { rows: schoolWorkSubRows } = await sql`
+      SELECT sc.name, sc.id as subcategory_id, COUNT(t.id)::int as count
+      FROM tasks t
+      JOIN subcategories sc ON sc.id = t.subcategory_id
+      JOIN categories c ON c.id = t.category_id
+      WHERE t.user_id = ${userId} AND t.status != 'archived' AND LOWER(c.name) = 'school work'
+      GROUP BY sc.id, sc.name
+      ORDER BY count DESC`
+
     return NextResponse.json({
       total: +total,
       completed: +completed,
@@ -32,6 +41,7 @@ export async function GET(request) {
       byPriority: { high: +high, medium: +medium, low: +low },
       byStatus: byStatusRows,
       byCategory: byCategoryRows,
+      schoolWorkSubcategories: schoolWorkSubRows,
     })
   } catch (e) {
     return NextResponse.json({ message: e.message }, { status: 500 })
