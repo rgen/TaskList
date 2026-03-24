@@ -79,7 +79,7 @@ export default function DashboardGrid() {
       </div>
 
       {/* Charts row 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <ChartCard title="School Work — Tasks by Subcategory">
           {sumLoading ? (
             <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
