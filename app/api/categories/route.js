@@ -8,9 +8,9 @@ export async function GET(request) {
 
   try {
     const { rows: categories } = await sql`
-      SELECT * FROM categories WHERE user_id = ${Number(user.id)} ORDER BY name`
+      SELECT * FROM categories WHERE user_id = ${Number(user.id)} ORDER BY position, id`
     const { rows: subcategories } = await sql`
-      SELECT * FROM subcategories WHERE user_id = ${Number(user.id)} ORDER BY name`
+      SELECT * FROM subcategories WHERE user_id = ${Number(user.id)} ORDER BY position, id`
 
     const result = categories.map((cat) => ({
       ...cat,

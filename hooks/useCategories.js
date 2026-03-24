@@ -55,3 +55,19 @@ export function useDeleteSubcategory() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   })
 }
+
+export function useReorderCategories() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids) => categoriesApi.reorder(ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  })
+}
+
+export function useReorderSubcategories() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids) => categoriesApi.reorderSubcategories(ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  })
+}
