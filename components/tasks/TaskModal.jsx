@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTask, useCreateTask, useUpdateTask } from '@/hooks/useTasks'
+import { useCategories } from '@/hooks/useCategories'
 import { subtasksApi, attachmentsApi } from '@/lib/api/subtasks'
 import SubtaskList from './SubtaskList'
 import AttachmentList from './AttachmentList'
@@ -106,7 +107,10 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
   const createMutation = useCreateTask()
   const updateMutation = useUpdateTask()
 
+  const { data: categories = [] } = useCategories()
   const [statusValue, setStatusValue] = useState('pending')
+  const [categoryId, setCategoryId] = useState('')
+  const [subcategoryId, setSubcategoryId] = useState('')
   const [isSchoologyTask, setIsSchoologyTask] = useState(false)
   const [pendingSubtasks, setPendingSubtasks] = useState([])
   const [pendingAttachments, setPendingAttachments] = useState([])
@@ -130,10 +134,14 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
     if (isEdit && task) {
       reset({ name: task.name || '', notes: task.notes || '', priority: task.priority || 'medium', due_date: task.due_date || '' })
       setStatusValue(task.status || 'pending')
+      setCategoryId(task.category_id ? String(task.category_id) : '')
+      setSubcategoryId(task.subcategory_id ? String(task.subcategory_id) : '')
       setIsSchoologyTask(task.source === 'schoology')
     } else if (!isEdit) {
       reset({ name: '', notes: '', priority: 'medium', due_date: '' })
       setStatusValue('pending')
+      setCategoryId('')
+      setSubcategoryId('')
       setIsSchoologyTask(false)
       setPendingSubtasks([])
       setPendingAttachments([])
@@ -153,6 +161,8 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
         ? Math.ceil((new Date(data.due_date) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
         : null,
       source: isSchoologyTask ? 'schoology' : null,
+      category_id: categoryId ? Number(categoryId) : null,
+      subcategory_id: subcategoryId ? Number(subcategoryId) : null,
     }
 
     if (isEdit) {
@@ -229,6 +239,38 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
                       </select>
                     </div>
                   </div>
+
+                  {categories.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select
+                          value={categoryId}
+                          onChange={(e) => { setCategoryId(e.target.value); setSubcategoryId('') }}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">— None —</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                        <select
+                          value={subcategoryId}
+                          onChange={(e) => setSubcategoryId(e.target.value)}
+                          disabled={!categoryId}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+                        >
+                          <option value="">— None —</option>
+                          {(categories.find((c) => String(c.id) === categoryId)?.subcategories || []).map((sub) => (
+                            <option key={sub.id} value={sub.id}>{sub.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>

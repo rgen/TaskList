@@ -48,7 +48,7 @@ export async function PUT(request, { params }) {
     }
 
     const body = await request.json()
-    const { name, notes, status, priority, due_date, duration, source } = body
+    const { name, notes, status, priority, due_date, duration, source, category_id, subcategory_id } = body
 
     if (!name || name.trim() === '') {
       return NextResponse.json({ message: 'name is required' }, { status: 400 })
@@ -70,6 +70,8 @@ export async function PUT(request, { params }) {
         due_date = ${due_date || null},
         duration = ${duration || null},
         source = ${source !== undefined ? (source || null) : existing.source},
+        category_id = ${category_id !== undefined ? (category_id || null) : existing.category_id},
+        subcategory_id = ${subcategory_id !== undefined ? (subcategory_id || null) : existing.subcategory_id},
         completed_at = ${completed_at},
         updated_at = NOW()
       WHERE id = ${id}
