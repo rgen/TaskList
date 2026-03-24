@@ -224,8 +224,8 @@ function SubcategoryPanel({ category, allCategories, setCategories }) {
                 sub={sub}
                 editingId={editingId}
                 onEdit={setEditingId}
-                onDelete={(id) => deleteSub.mutate(id)}
-                onSaveEdit={(id, name) => updateSub.mutate({ id, name }, { onSuccess: () => setEditingId(null) })}
+                onDelete={(id) => deleteSub.mutate(id, { onSuccess: () => setCategories(null) })}
+                onSaveEdit={(id, name) => updateSub.mutate({ id, name }, { onSuccess: () => { setEditingId(null); setCategories(null) } })}
                 onCancelEdit={() => setEditingId(null)}
               />
             ))}
@@ -233,7 +233,7 @@ function SubcategoryPanel({ category, allCategories, setCategories }) {
               <li>
                 <InlineInput
                   placeholder="Subcategory name…"
-                  onSave={(name) => createSub.mutate({ categoryId: category.id, name }, { onSuccess: () => setAdding(false) })}
+                  onSave={(name) => createSub.mutate({ categoryId: category.id, name }, { onSuccess: () => { setAdding(false); setCategories(null) } })}
                   onCancel={() => setAdding(false)}
                 />
               </li>
