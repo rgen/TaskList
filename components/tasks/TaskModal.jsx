@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useTask, useCreateTask, useUpdateTask } from '@/hooks/useTasks'
+import { useQueryClient } from '@tanstack/react-query'
+import { useTask, useCreateTask, useUpdateTask, TASKS_KEY } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import { subtasksApi, attachmentsApi } from '@/lib/api/subtasks'
 import SubtaskList from './SubtaskList'
@@ -140,6 +141,7 @@ function PendingAttachmentList({ items, onAdd, onRemove }) {
 }
 
 export default function TaskModal({ isOpen, taskId, onClose }) {
+  const qc = useQueryClient()
   const isEdit = !!taskId
   const { data: task, isLoading } = useTask(taskId)
 
@@ -212,6 +214,8 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
         ...pendingSubtasks.map((item, i) => subtasksApi.create(newTask.id, { name: item.name, position: i })),
         ...pendingAttachments.map((att) => attachmentsApi.create(newTask.id, att)),
       ])
+      // Refetch task list now that subtasks exist so subtask_count is correct
+      await qc.invalidateQueries({ queryKey: [TASKS_KEY] })
     }
     onClose()
   }
