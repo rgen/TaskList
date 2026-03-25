@@ -123,7 +123,19 @@ export default function CalendarView() {
       const task = tasks.find((t) => t.id === taskId)
       if (!task || task.due_date === newDate) return
 
-      updateTask.mutate({ id: taskId, data: { due_date: newDate } })
+      updateTask.mutate({
+        id: taskId,
+        data: {
+          name: task.name,
+          notes: task.notes,
+          status: task.status,
+          priority: task.priority,
+          due_date: newDate,
+          duration: task.duration,
+          category_id: task.category_id,
+          subcategory_id: task.subcategory_id,
+        },
+      })
     },
     [tasks, updateTask]
   )
