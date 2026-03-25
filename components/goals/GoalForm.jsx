@@ -3,17 +3,14 @@ import { useState } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 import { useCreateGoal } from '@/hooks/useGoals'
 
-const today = new Date().toISOString().slice(0, 10)
-const inOneYear = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10)
-
 const EMPTY = {
   name: '',
   category_id: '',
   subcategory_id: '',
   tasks_per_week: 1,
   hours_per_week: '',
-  start_date: today,
-  end_date: inOneYear,
+  start_date: '',
+  end_date: '',
 }
 
 export default function GoalForm({ onSuccess }) {
