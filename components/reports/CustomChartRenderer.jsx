@@ -22,6 +22,7 @@ function computeChartData(tasks, dataSource, config) {
     if (config.filter_status && t.status !== config.filter_status) return false
     if (config.filter_priority && t.priority !== config.filter_priority) return false
     if (config.filter_category_id && t.category_id !== Number(config.filter_category_id)) return false
+    if (config.filter_category_name && (t.category_name || '').toLowerCase() !== config.filter_category_name.toLowerCase()) return false
     if (config.exclude_archived !== false && t.status === 'archived') return false
     if (config.exclude_completed && t.status === 'completed') return false
     return true
@@ -135,6 +136,51 @@ function computeChartData(tasks, dataSource, config) {
         else counts['Incomplete']++
       })
       return Object.entries(counts).map(([name, value]) => ({ name, value }))
+    }
+
+    case 'due_this_week': {
+      const now = new Date()
+      const days = []
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now)
+        d.setDate(d.getDate() + i)
+        const dateStr = d.toISOString().slice(0, 10)
+        const count = filtered.filter((t) => t.due_date === dateStr).length
+        days.push({ name: dayNames[d.getDay()], value: count, date: dateStr })
+      }
+      return days
+    }
+
+    case 'due_by_week': {
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const dayOfWeek = today.getDay()
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - dayOfWeek)
+
+      const buckets = [
+        { name: 'Overdue', value: 0 },
+        { name: 'This Week', value: 0 },
+        { name: 'Next Week', value: 0 },
+        { name: 'Week 3', value: 0 },
+        { name: 'Week 4', value: 0 },
+        { name: 'Week 5+', value: 0 },
+      ]
+
+      filtered.forEach((t) => {
+        if (!t.due_date || t.status === 'completed') return
+        const d = new Date(t.due_date)
+        const diffDays = Math.floor((d - weekStart) / 86400000)
+        if (diffDays < 0) buckets[0].value++
+        else if (diffDays < 7) buckets[1].value++
+        else if (diffDays < 14) buckets[2].value++
+        else if (diffDays < 21) buckets[3].value++
+        else if (diffDays < 28) buckets[4].value++
+        else buckets[5].value++
+      })
+
+      return buckets
     }
 
     default:

@@ -20,6 +20,8 @@ const DATA_SOURCES = [
   { value: 'duration', label: 'Duration', desc: 'Group tasks by estimated duration' },
   { value: 'created_trend', label: 'Creation Trend', desc: 'Tasks created per day' },
   { value: 'completion_rate', label: 'Completion Rate', desc: 'Completed vs incomplete' },
+  { value: 'due_this_week', label: 'Due This Week', desc: 'Tasks due each day this week' },
+  { value: 'due_by_week', label: 'Due by Week', desc: 'Tasks grouped by week buckets' },
 ]
 
 const COLOR_SCHEMES = [
