@@ -45,6 +45,14 @@ export default function TaskTable({ initialFilters = {} }) {
     schoolWorkSet.current = true
   }, [categories])
 
+  // When URL params change (e.g. clicking a chart), update filters
+  useEffect(() => {
+    const hasSpecific = Object.keys(initialFilters).some(k => !['sort', 'order'].includes(k))
+    if (hasSpecific) {
+      setFilters({ ...BASE_FILTERS, ...initialFilters })
+    }
+  }, [JSON.stringify(initialFilters)])
+
   // Persist filters to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {

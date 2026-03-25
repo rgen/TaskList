@@ -201,6 +201,15 @@ function computeChartData(tasks, dataSource, config) {
   }
 }
 
+function getWeekStartDate(weekOffset) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const dayOfWeek = today.getDay()
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - dayOfWeek + weekOffset * 7)
+  return weekStart.toISOString().slice(0, 10)
+}
+
 function getNavUrl(dataSource, entry) {
   if (!entry?._key && entry?._key !== 0) return null
 
@@ -217,14 +226,23 @@ function getNavUrl(dataSource, entry) {
       return `/tasks?status=${entry._key}`
     case 'due_this_week':
       return `/tasks?due_date=${entry._key}`
-    case 'due_date':
-    case 'due_by_week':
-      if (entry._key === 'overdue' || entry._key === 'Overdue') return '/tasks?overdue=true'
-      if (entry._key === 'Today') {
-        const todayStr = new Date().toISOString().slice(0, 10)
-        return `/tasks?due_date=${todayStr}`
-      }
+    case 'due_date': {
+      if (entry._key === 'Overdue') return '/tasks?overdue=true'
+      if (entry._key === 'Today') return `/tasks?due_date=${new Date().toISOString().slice(0, 10)}`
+      if (entry._key === 'This Week') return `/tasks?week_start=${getWeekStartDate(0)}`
+      if (entry._key === 'Next Week') return `/tasks?week_start=${getWeekStartDate(1)}`
+      if (entry._key === 'Later') return `/tasks?due_date_from=${getWeekStartDate(2)}`
       return '/tasks'
+    }
+    case 'due_by_week': {
+      if (entry._key === 'overdue') return '/tasks?overdue=true'
+      if (entry._key === 'this_week') return `/tasks?week_start=${getWeekStartDate(0)}`
+      if (entry._key === 'next_week') return `/tasks?week_start=${getWeekStartDate(1)}`
+      if (entry._key === 'week_3') return `/tasks?week_start=${getWeekStartDate(2)}`
+      if (entry._key === 'week_4') return `/tasks?week_start=${getWeekStartDate(3)}`
+      if (entry._key === 'week_5plus') return `/tasks?due_date_from=${getWeekStartDate(4)}`
+      return '/tasks'
+    }
     default:
       return null
   }
