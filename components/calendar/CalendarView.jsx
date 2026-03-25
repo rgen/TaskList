@@ -1,56 +1,87 @@
 'use client'
 import { useState, useMemo, useCallback } from 'react'
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns'
+import {
+  format,
+  addDays,
+  subDays,
+  addWeeks,
+  subWeeks,
+  addMonths,
+  subMonths,
+  addYears,
+  subYears,
+  startOfWeek,
+  endOfWeek,
+} from 'date-fns'
 import clsx from 'clsx'
 import { useTasks, useUpdateTask } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import TaskModal from '@/components/tasks/TaskModal'
 
+import MonthView from './views/MonthView'
+import DayView from './views/DayView'
+import WeekView from './views/WeekView'
+import YearView from './views/YearView'
+import ScheduleView from './views/ScheduleView'
+
 const PALETTE = [
-  '#3b82f6', // blue
-  '#8b5cf6', // violet
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#06b6d4', // cyan
-  '#f43f5e', // rose
-  '#84cc16', // lime
-  '#a855f7', // purple
-  '#14b8a6', // teal
+  '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
+  '#06b6d4', '#f43f5e', '#84cc16', '#a855f7', '#14b8a6',
 ]
 
 const PRIORITY_COLORS = {
-  high:   '#ef4444',
+  high: '#ef4444',
   medium: '#f59e0b',
-  low:    '#22c55e',
+  low: '#22c55e',
 }
 
 const PRIORITY_LABELS = [
-  { key: 'high',   label: 'High' },
+  { key: 'high', label: 'High' },
   { key: 'medium', label: 'Medium' },
-  { key: 'low',    label: 'Low' },
+  { key: 'low', label: 'Low' },
 ]
 
-const STATUS_STRIKE = 'line-through opacity-50'
+const VIEW_OPTIONS = [
+  { key: 'day', label: 'Day' },
+  { key: 'week', label: 'Week' },
+  { key: 'month', label: 'Month' },
+  { key: 'year', label: 'Year' },
+  { key: 'schedule', label: 'Schedule' },
+]
 
-function buildCalendarDays(month) {
-  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 })
-  const end = endOfWeek(endOfMonth(month), { weekStartsOn: 0 })
-  const days = []
-  let cur = start
-  while (cur <= end) { days.push(cur); cur = addDays(cur, 1) }
-  return days
-}
-
-function hexToRgb(hex) {
+export function hexToRgb(hex) {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return `${r}, ${g}, ${b}`
 }
 
+function getHeaderLabel(viewMode, currentDate) {
+  switch (viewMode) {
+    case 'day':
+      return format(currentDate, 'MMMM d, yyyy')
+    case 'week': {
+      const ws = startOfWeek(currentDate, { weekStartsOn: 0 })
+      const we = endOfWeek(currentDate, { weekStartsOn: 0 })
+      return `${format(ws, 'MMM d')} – ${format(we, 'MMM d, yyyy')}`
+    }
+    case 'month':
+      return format(currentDate, 'MMMM yyyy')
+    case 'year':
+      return format(currentDate, 'yyyy')
+    case 'schedule':
+      return 'Schedule'
+    default:
+      return ''
+  }
+}
+
 export default function CalendarView() {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window === 'undefined') return 'month'
+    return localStorage.getItem('calendar_view_mode') || 'month'
+  })
   const [editTaskId, setEditTaskId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [dropTarget, setDropTarget] = useState(null)
@@ -63,7 +94,6 @@ export default function CalendarView() {
   const { data: categories = [] } = useCategories()
   const updateTask = useUpdateTask()
 
-  // Build a stable color map: category id → hex color
   const categoryColors = useMemo(() => {
     const map = {}
     categories.forEach((cat, i) => {
@@ -72,22 +102,56 @@ export default function CalendarView() {
     return map
   }, [categories])
 
-  const days = buildCalendarDays(currentMonth)
-  const today = new Date()
-
-  function getTasksForDay(day) {
-    const dayStr = format(day, 'yyyy-MM-dd')
-    return tasks.filter((t) => t.due_date === dayStr)
-  }
-
-  function getColor(task) {
+  const getColor = useCallback((task) => {
     if (colorBy === 'priority') return PRIORITY_COLORS[task.priority] || '#6b7280'
     return task.category_id ? (categoryColors[task.category_id] || '#6b7280') : '#6b7280'
-  }
+  }, [colorBy, categoryColors])
 
   function openTask(id) {
     setEditTaskId(id)
     setModalOpen(true)
+  }
+
+  // Navigation
+  function goNext() {
+    setCurrentDate((d) => {
+      switch (viewMode) {
+        case 'day': return addDays(d, 1)
+        case 'week': return addWeeks(d, 1)
+        case 'month': return addMonths(d, 1)
+        case 'year': return addYears(d, 1)
+        case 'schedule': return addMonths(d, 1)
+        default: return d
+      }
+    })
+  }
+
+  function goPrev() {
+    setCurrentDate((d) => {
+      switch (viewMode) {
+        case 'day': return subDays(d, 1)
+        case 'week': return subWeeks(d, 1)
+        case 'month': return subMonths(d, 1)
+        case 'year': return subYears(d, 1)
+        case 'schedule': return subMonths(d, 1)
+        default: return d
+      }
+    })
+  }
+
+  function goToday() {
+    setCurrentDate(new Date())
+  }
+
+  function handleViewChange(mode) {
+    setViewMode(mode)
+    localStorage.setItem('calendar_view_mode', mode)
+  }
+
+  function navigateToDay(day) {
+    setCurrentDate(day)
+    setViewMode('day')
+    localStorage.setItem('calendar_view_mode', 'day')
   }
 
   // Drag-and-drop handlers
@@ -140,175 +204,145 @@ export default function CalendarView() {
     [tasks, updateTask]
   )
 
-  // Only show categories that appear in tasks
   const usedCategories = categories.filter(c => tasks.some(t => t.category_id === c.id))
+
+  const sharedProps = {
+    currentDate,
+    tasks,
+    getColor,
+    hexToRgb,
+    openTask,
+    dropTarget,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragStart,
+    handleDragEnd,
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {format(currentMonth, 'MMMM yyyy')}
-        </h2>
-        <div className="flex items-center gap-4">
-          {/* Color-by toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => { setColorBy('category'); localStorage.setItem('calendar_color_by', 'category') }}
-              className={clsx(
-                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                colorBy === 'category' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              )}
-            >
-              Category
-            </button>
-            <button
-              onClick={() => { setColorBy('priority'); localStorage.setItem('calendar_color_by', 'priority') }}
-              className={clsx(
-                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                colorBy === 'priority' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              )}
-            >
-              Priority
-            </button>
-          </div>
-
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-gray-200">
+        {/* Left: title + nav */}
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setCurrentMonth(new Date())}
-            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
+            onClick={goPrev}
             className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Previous month"
+            aria-label="Previous"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
+          <h2 className="text-lg font-semibold text-gray-900 min-w-[180px] text-center">
+            {getHeaderLabel(viewMode, currentDate)}
+          </h2>
           <button
-            onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+            onClick={goNext}
             className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Next month"
+            aria-label="Next"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+          <button
+            onClick={goToday}
+            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Today
+          </button>
+        </div>
+
+        {/* Right: view toggle + color-by */}
+        <div className="flex items-center gap-3">
+          {/* View mode toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            {VIEW_OPTIONS.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handleViewChange(key)}
+                className={clsx(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
+                  viewMode === key
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Color-by toggle (hidden in schedule/year view) */}
+          {viewMode !== 'year' && (
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => { setColorBy('category'); localStorage.setItem('calendar_color_by', 'category') }}
+                className={clsx(
+                  'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                  colorBy === 'category' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                )}
+              >
+                Category
+              </button>
+              <button
+                onClick={() => { setColorBy('priority'); localStorage.setItem('calendar_color_by', 'priority') }}
+                className={clsx(
+                  'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                  colorBy === 'priority' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                )}
+              >
+                Priority
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-          <div key={d} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            {d}
-          </div>
-        ))}
-      </div>
+      {/* View content */}
+      {viewMode === 'month' && <MonthView {...sharedProps} />}
+      {viewMode === 'day' && <DayView {...sharedProps} />}
+      {viewMode === 'week' && <WeekView {...sharedProps} />}
+      {viewMode === 'year' && <YearView currentDate={currentDate} tasks={tasks} navigateToDay={navigateToDay} />}
+      {viewMode === 'schedule' && <ScheduleView {...sharedProps} />}
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7">
-        {days.map((day, i) => {
-          const dayTasks = getTasksForDay(day)
-          const isToday = isSameDay(day, today)
-          const isCurrentMonth = isSameMonth(day, currentMonth)
-          const isLastRow = i >= days.length - 7
-          const dateKey = format(day, 'yyyy-MM-dd')
-          const isDrop = dropTarget === dateKey
-
-          return (
-            <div
-              key={day.toISOString()}
-              className={clsx(
-                'min-h-[120px] p-2 border-b border-r border-gray-100 transition-colors',
-                !isCurrentMonth && 'bg-gray-50',
-                isLastRow && 'border-b-0',
-                (i + 1) % 7 === 0 && 'border-r-0',
-                isDrop && 'bg-blue-50 ring-2 ring-inset ring-blue-300'
+      {/* Legend (hidden in year view) */}
+      {viewMode !== 'year' && (
+        <div className="flex items-center flex-wrap gap-3 px-6 py-3 border-t border-gray-100 bg-gray-50">
+          {colorBy === 'category' ? (
+            <>
+              <span className="text-xs text-gray-500 font-medium">Category:</span>
+              {usedCategories.length === 0 && (
+                <span className="text-xs text-gray-400">No categories assigned</span>
               )}
-              onDragOver={(e) => handleDragOver(e, day)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, day)}
-            >
-              <div className="mb-1.5">
-                <span
-                  className={clsx(
-                    'inline-flex items-center justify-center w-7 h-7 text-sm font-medium rounded-full',
-                    isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                  )}
-                >
-                  {format(day, 'd')}
+              {usedCategories.map((cat) => (
+                <span key={cat.id} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: categoryColors[cat.id] }} />
+                  {cat.name}
                 </span>
-              </div>
-
-              <div className="space-y-1">
-                {dayTasks.map((task) => {
-                  const color = getColor(task)
-                  return (
-                    <button
-                      key={task.id}
-                      type="button"
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, task)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => openTask(task.id)}
-                      className={clsx(
-                        'w-full text-left text-xs px-1.5 py-0.5 rounded font-medium truncate transition-opacity hover:opacity-80 cursor-grab active:cursor-grabbing',
-                        task.status === 'completed' && STATUS_STRIKE
-                      )}
-                      style={{
-                        backgroundColor: `rgba(${hexToRgb(color)}, 0.15)`,
-                        color,
-                        borderLeft: `3px solid ${color}`,
-                      }}
-                      title={task.name}
-                    >
-                      {task.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center flex-wrap gap-3 px-6 py-3 border-t border-gray-100 bg-gray-50">
-        {colorBy === 'category' ? (
-          <>
-            <span className="text-xs text-gray-500 font-medium">Category:</span>
-            {usedCategories.length === 0 && (
-              <span className="text-xs text-gray-400">No categories assigned</span>
-            )}
-            {usedCategories.map((cat) => (
-              <span key={cat.id} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: categoryColors[cat.id] }} />
-                {cat.name}
-              </span>
-            ))}
-            {tasks.some(t => !t.category_id) && (
-              <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
-                <span className="inline-block w-3 h-3 rounded-full bg-gray-400 shrink-0" />
-                Uncategorized
-              </span>
-            )}
-          </>
-        ) : (
-          <>
-            <span className="text-xs text-gray-500 font-medium">Priority:</span>
-            {PRIORITY_LABELS.map(({ key, label }) => (
-              <span key={key} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: PRIORITY_COLORS[key] }} />
-                {label}
-              </span>
-            ))}
-          </>
-        )}
-      </div>
+              ))}
+              {tasks.some(t => !t.category_id) && (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                  <span className="inline-block w-3 h-3 rounded-full bg-gray-400 shrink-0" />
+                  Uncategorized
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-gray-500 font-medium">Priority:</span>
+              {PRIORITY_LABELS.map(({ key, label }) => (
+                <span key={key} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: PRIORITY_COLORS[key] }} />
+                  {label}
+                </span>
+              ))}
+            </>
+          )}
+        </div>
+      )}
 
       <TaskModal
         isOpen={modalOpen}
