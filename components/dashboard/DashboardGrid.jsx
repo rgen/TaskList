@@ -1,8 +1,24 @@
 'use client'
+import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useDashboardSummary } from '@/hooks/useDashboard'
 import { useCustomCharts } from '@/hooks/useCustomCharts'
 import { useTasks } from '@/hooks/useTasks'
+import { customChartsApi } from '@/lib/api/tasks'
 import CustomChartRenderer from '@/components/reports/CustomChartRenderer'
 
 function StatCard({ label, value, colorClass = 'text-gray-900', href }) {
@@ -15,12 +31,79 @@ function StatCard({ label, value, colorClass = 'text-gray-900', href }) {
   return href ? <Link href={href}>{content}</Link> : content
 }
 
+function SortableChartCard({ chart, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: chart.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    gridColumn: chart.span === 'full' ? 'span 2 / span 2' : undefined,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex items-center justify-between px-5 pt-4 pb-0">
+        <h3 className="text-sm font-semibold text-gray-700">{chart.name}</h3>
+        <button
+          {...attributes}
+          {...listeners}
+          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing p-1 rounded touch-none"
+          title="Drag to reorder"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" />
+            <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+            <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
+          </svg>
+        </button>
+      </div>
+      <div className="px-5 pb-5 pt-3">{children}</div>
+    </div>
+  )
+}
+
 export default function DashboardGrid() {
   const { data: summary, isLoading: sumLoading } = useDashboardSummary()
   const { data: customCharts = [], isLoading: chartsLoading } = useCustomCharts()
   const { data: allTasks = [] } = useTasks()
 
-  const dashboardCharts = customCharts.filter((c) => c.show_on_dashboard)
+  const [orderedCharts, setOrderedCharts] = useState([])
+
+  // Sync ordered charts when data loads or changes
+  useEffect(() => {
+    const dashboard = customCharts.filter((c) => c.show_on_dashboard)
+    setOrderedCharts(dashboard)
+  }, [customCharts])
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  const handleDragEnd = useCallback((event) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    setOrderedCharts((prev) => {
+      const oldIndex = prev.findIndex((c) => c.id === active.id)
+      const newIndex = prev.findIndex((c) => c.id === over.id)
+      const reordered = arrayMove(prev, oldIndex, newIndex)
+
+      // Persist new positions to the database
+      reordered.forEach((chart, i) => {
+        if (chart.position !== i) {
+          customChartsApi.update(chart.id, {
+            name: chart.name,
+            chart_type: chart.chart_type,
+            data_source: chart.data_source,
+            config: chart.config,
+            span: chart.span,
+            show_on_dashboard: chart.show_on_dashboard,
+            position: i,
+          }).catch(() => {})
+        }
+      })
+
+      return reordered
+    })
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -35,7 +118,7 @@ export default function DashboardGrid() {
       {/* Custom charts */}
       {chartsLoading ? (
         <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Loading charts…</div>
-      ) : dashboardCharts.length === 0 ? (
+      ) : orderedCharts.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
           <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -47,22 +130,17 @@ export default function DashboardGrid() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {dashboardCharts.map((chart) => (
-            <div
-              key={chart.id}
-              className="bg-white rounded-xl border border-gray-200 shadow-sm"
-              style={{ gridColumn: chart.span === 'full' ? 'span 2 / span 2' : undefined }}
-            >
-              <div className="px-5 pt-4 pb-0">
-                <h3 className="text-sm font-semibold text-gray-700">{chart.name}</h3>
-              </div>
-              <div className="px-5 pb-5 pt-3">
-                <CustomChartRenderer chart={chart} tasks={allTasks} />
-              </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={orderedCharts.map((c) => c.id)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {orderedCharts.map((chart) => (
+                <SortableChartCard key={chart.id} chart={chart}>
+                  <CustomChartRenderer chart={chart} tasks={allTasks} />
+                </SortableChartCard>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   )
