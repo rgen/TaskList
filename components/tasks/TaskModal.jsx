@@ -146,7 +146,7 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
       setPendingSubtasks([])
       setPendingAttachments([])
     }
-  }, [isEdit, task, reset])
+  }, [isOpen, isEdit, task, reset])
 
   if (!isOpen) return null
 
