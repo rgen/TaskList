@@ -10,6 +10,7 @@ import PriorityBadge from './PriorityBadge'
 import OverdueBadge from './OverdueBadge'
 import NewBadge from './NewBadge'
 import LogHoursModal from '@/components/goals/LogHoursModal'
+import { useSyncTaskToGcal } from '@/hooks/useGoogleCalendar'
 
 function InlineSubtasks({ taskId }) {
   const { data: subtasks = [], isLoading } = useSubtasks(taskId)
@@ -38,6 +39,7 @@ function InlineSubtasks({ taskId }) {
 
 export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   const toggleMutation = useToggleTask()
+  const syncGcal = useSyncTaskToGcal()
   const [subtasksOpen, setSubtasksOpen] = useState(false)
   const [showLogHours, setShowLogHours] = useState(false)
   const qc = useQueryClient()
@@ -202,6 +204,34 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
+            </button>
+          )}
+          {task.due_date && (
+            <button
+              onClick={() => syncGcal.mutate(task.id)}
+              disabled={syncGcal.isPending}
+              className={`p-1.5 rounded-md transition-colors ${
+                task.gcal_event_id
+                  ? 'text-green-500 hover:text-green-700 hover:bg-green-50'
+                  : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+              }`}
+              aria-label={task.gcal_event_id ? 'Re-sync to Google Calendar' : 'Sync to Google Calendar'}
+              title={task.gcal_event_id ? 'Synced — click to update' : 'Sync to Google Calendar'}
+            >
+              {syncGcal.isPending ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  {task.gcal_event_id && (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                  )}
+                </svg>
+              )}
             </button>
           )}
           <button
