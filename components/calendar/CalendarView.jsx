@@ -53,7 +53,7 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [editTaskId, setEditTaskId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [colorBy, setColorBy] = useState('category') // 'category' | 'priority'
+  const [colorBy, setColorBy] = useState('priority') // 'category' | 'priority'
 
   const { data: tasks = [] } = useTasks()
   const { data: categories = [] } = useCategories()
