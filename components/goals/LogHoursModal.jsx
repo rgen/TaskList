@@ -1,8 +1,22 @@
 'use client'
 import { useState } from 'react'
 
+function goalToHrMin(decimal) {
+  if (!decimal) return { h: '', m: '' }
+  const total = Math.round(Number(decimal) * 60)
+  return { h: String(Math.floor(total / 60)), m: String(total % 60) }
+}
+
+function toDecimal(h, m) {
+  return Math.round(((Number(h) || 0) * 60 + (Number(m) || 0)) / 60 * 100) / 100
+}
+
 export default function LogHoursModal({ task, onConfirm, onSkip, onClose }) {
-  const [hours, setHours] = useState(task.hours_goal ?? '')
+  const init = goalToHrMin(task.hours_goal)
+  const [hrs, setHrs] = useState(init.h)
+  const [mins, setMins] = useState(init.m)
+
+  const decimal = toDecimal(hrs, mins)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -16,23 +30,47 @@ export default function LogHoursModal({ task, onConfirm, onSkip, onClose }) {
           </p>
         )}
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Actual hours completed
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Actual time completed
         </label>
-        <input
-          type="number"
-          min="0"
-          step="0.25"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g. 1.5"
-          autoFocus
-        />
+
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <input
+              type="number"
+              min="0"
+              value={hrs}
+              onChange={e => setHrs(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+              placeholder="0"
+              autoFocus
+            />
+            <p className="text-xs text-gray-400 text-center mt-1">Hours</p>
+          </div>
+          <span className="text-gray-400 font-medium pb-4">:</span>
+          <div className="flex-1">
+            <input
+              type="number"
+              min="0"
+              max="59"
+              value={mins}
+              onChange={e => setMins(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+              placeholder="0"
+            />
+            <p className="text-xs text-gray-400 text-center mt-1">Minutes</p>
+          </div>
+        </div>
+
+        {(hrs || mins) && (
+          <p className="text-xs text-gray-400 text-center mt-2">
+            = <span className="font-medium text-gray-600">{decimal}h</span> decimal
+          </p>
+        )}
 
         <div className="flex gap-2 mt-5">
           <button
-            onClick={() => onConfirm(Number(hours) || 0)}
+            onClick={() => onConfirm(decimal)}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
           >
             Save & Complete
