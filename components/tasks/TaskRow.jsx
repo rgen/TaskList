@@ -8,6 +8,7 @@ import { tasksApi } from '@/lib/api/tasks'
 import { useQueryClient } from '@tanstack/react-query'
 import PriorityBadge from './PriorityBadge'
 import OverdueBadge from './OverdueBadge'
+import NewBadge from './NewBadge'
 import LogHoursModal from '@/components/goals/LogHoursModal'
 
 function InlineSubtasks({ taskId }) {
@@ -102,6 +103,7 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
           )}
           <div className="flex gap-1.5 flex-wrap">
             {task.is_overdue && <OverdueBadge />}
+            <NewBadge createdAt={task.created_at} />
             {task.goal_id && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">
                 {task.hours_logged != null

@@ -1,5 +1,6 @@
 'use client'
 import clsx from 'clsx'
+import NewBadge from '@/components/tasks/NewBadge'
 
 const STATUS_STRIKE = 'line-through opacity-50'
 
@@ -11,6 +12,7 @@ export default function CalendarTaskChip({
   onDragEnd,
   onClick,
   size = 'sm',
+  showNewBadge = false,
 }) {
   const isSmall = size === 'sm'
 
@@ -22,8 +24,8 @@ export default function CalendarTaskChip({
       onDragEnd={onDragEnd}
       onClick={() => onClick(task.id)}
       className={clsx(
-        'w-full text-left rounded font-medium truncate transition-opacity hover:opacity-80 cursor-grab active:cursor-grabbing',
-        isSmall ? 'text-xs px-1.5 py-0.5' : 'text-sm px-3 py-2',
+        'w-full text-left rounded font-medium transition-opacity hover:opacity-80 cursor-grab active:cursor-grabbing',
+        isSmall ? 'text-xs px-1.5 py-0.5 truncate' : 'text-sm px-3 py-2',
         task.status === 'completed' && STATUS_STRIKE
       )}
       style={{
@@ -33,7 +35,14 @@ export default function CalendarTaskChip({
       }}
       title={task.name}
     >
-      {task.name}
+      {isSmall ? (
+        task.name
+      ) : (
+        <span className="flex items-center gap-2 flex-wrap">
+          <span className="truncate">{task.name}</span>
+          {showNewBadge && <NewBadge createdAt={task.created_at} />}
+        </span>
+      )}
     </button>
   )
 }
