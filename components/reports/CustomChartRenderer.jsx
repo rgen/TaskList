@@ -1,5 +1,6 @@
 'use client'
 import { useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   PieChart, Pie, Cell,
   BarChart, Bar,
@@ -16,6 +17,10 @@ const COLOR_SCHEMES = {
 
 const STATUS_LABELS = { pending: 'Pending', completed: 'Completed', in_progress: 'In Progress', archived: 'Archived' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
+
+// Reverse lookup: label → raw key
+const STATUS_KEYS = Object.fromEntries(Object.entries(STATUS_LABELS).map(([k, v]) => [v, k]))
+const PRIORITY_KEYS = Object.fromEntries(Object.entries(PRIORITY_LABELS).map(([k, v]) => [v, k]))
 
 function computeChartData(tasks, dataSource, config) {
   const filtered = tasks.filter((t) => {
@@ -35,9 +40,10 @@ function computeChartData(tasks, dataSource, config) {
         const key = t.status || 'unknown'
         counts[key] = (counts[key] || 0) + 1
       })
-      return Object.entries(counts).map(([name, value]) => ({
-        name: STATUS_LABELS[name] || name,
+      return Object.entries(counts).map(([key, value]) => ({
+        name: STATUS_LABELS[key] || key,
         value,
+        _key: key,
       }))
     }
 
@@ -49,28 +55,31 @@ function computeChartData(tasks, dataSource, config) {
       return Object.entries(counts).map(([key, value]) => ({
         name: PRIORITY_LABELS[key],
         value,
+        _key: key,
       }))
     }
 
     case 'category': {
-      const counts = {}
+      const groups = {}
       filtered.forEach((t) => {
         const name = t.category_name || 'Uncategorized'
-        counts[name] = (counts[name] || 0) + 1
+        if (!groups[name]) groups[name] = { count: 0, id: t.category_id }
+        groups[name].count++
       })
-      return Object.entries(counts)
-        .map(([name, value]) => ({ name, value }))
+      return Object.entries(groups)
+        .map(([name, { count, id }]) => ({ name, value: count, _key: id }))
         .sort((a, b) => b.value - a.value)
     }
 
     case 'subcategory': {
-      const counts = {}
+      const groups = {}
       filtered.forEach((t) => {
         const name = t.subcategory_name || 'None'
-        counts[name] = (counts[name] || 0) + 1
+        if (!groups[name]) groups[name] = { count: 0, id: t.subcategory_id }
+        groups[name].count++
       })
-      return Object.entries(counts)
-        .map(([name, value]) => ({ name, value }))
+      return Object.entries(groups)
+        .map(([name, { count, id }]) => ({ name, value: count, _key: id }))
         .sort((a, b) => b.value - a.value)
     }
 
@@ -92,7 +101,7 @@ function computeChartData(tasks, dataSource, config) {
 
       return Object.entries(buckets)
         .filter(([, v]) => v > 0)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => ({ name, value, _key: name }))
     }
 
     case 'duration': {
@@ -135,7 +144,11 @@ function computeChartData(tasks, dataSource, config) {
         if (t.status === 'completed') counts['Completed']++
         else counts['Incomplete']++
       })
-      return Object.entries(counts).map(([name, value]) => ({ name, value }))
+      return Object.entries(counts).map(([name, value]) => ({
+        name,
+        value,
+        _key: name === 'Completed' ? 'completed' : 'pending',
+      }))
     }
 
     case 'due_this_week': {
@@ -147,7 +160,7 @@ function computeChartData(tasks, dataSource, config) {
         d.setDate(d.getDate() + i)
         const dateStr = d.toISOString().slice(0, 10)
         const count = filtered.filter((t) => t.due_date === dateStr).length
-        days.push({ name: dayNames[d.getDay()], value: count, date: dateStr })
+        days.push({ name: dayNames[d.getDay()], value: count, _key: dateStr })
       }
       return days
     }
@@ -160,12 +173,12 @@ function computeChartData(tasks, dataSource, config) {
       weekStart.setDate(today.getDate() - dayOfWeek)
 
       const buckets = [
-        { name: 'Overdue', value: 0 },
-        { name: 'This Week', value: 0 },
-        { name: 'Next Week', value: 0 },
-        { name: 'Week 3', value: 0 },
-        { name: 'Week 4', value: 0 },
-        { name: 'Week 5+', value: 0 },
+        { name: 'Overdue', value: 0, _key: 'overdue' },
+        { name: 'This Week', value: 0, _key: 'this_week' },
+        { name: 'Next Week', value: 0, _key: 'next_week' },
+        { name: 'Week 3', value: 0, _key: 'week_3' },
+        { name: 'Week 4', value: 0, _key: 'week_4' },
+        { name: 'Week 5+', value: 0, _key: 'week_5plus' },
       ]
 
       filtered.forEach((t) => {
@@ -188,6 +201,35 @@ function computeChartData(tasks, dataSource, config) {
   }
 }
 
+function getNavUrl(dataSource, entry) {
+  if (!entry?._key && entry?._key !== 0) return null
+
+  switch (dataSource) {
+    case 'status':
+      return `/tasks?status=${entry._key}`
+    case 'priority':
+      return `/tasks?priority=${entry._key}`
+    case 'category':
+      return entry._key ? `/tasks?category_id=${entry._key}` : '/tasks'
+    case 'subcategory':
+      return entry._key ? `/tasks?subcategory_id=${entry._key}` : '/tasks'
+    case 'completion_rate':
+      return `/tasks?status=${entry._key}`
+    case 'due_this_week':
+      return `/tasks?due_date=${entry._key}`
+    case 'due_date':
+    case 'due_by_week':
+      if (entry._key === 'overdue' || entry._key === 'Overdue') return '/tasks?overdue=true'
+      if (entry._key === 'Today') {
+        const todayStr = new Date().toISOString().slice(0, 10)
+        return `/tasks?due_date=${todayStr}`
+      }
+      return '/tasks'
+    default:
+      return null
+  }
+}
+
 const RADIAN = Math.PI / 180
 function renderDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
   if (percent < 0.05) return null
@@ -202,12 +244,24 @@ function renderDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent 
 }
 
 export default function CustomChartRenderer({ chart, tasks }) {
+  const router = useRouter()
   const colors = COLOR_SCHEMES[chart.config?.color_scheme] || COLOR_SCHEMES.default
 
   const data = useMemo(
     () => computeChartData(tasks, chart.data_source, chart.config || {}),
     [tasks, chart.data_source, chart.config]
   )
+
+  function handleClick(entry) {
+    const url = getNavUrl(chart.data_source, entry)
+    if (url) router.push(url)
+  }
+
+  function handleBarClick(chartEvent) {
+    if (chartEvent?.activePayload?.[0]) {
+      handleClick(chartEvent.activePayload[0].payload)
+    }
+  }
 
   if (!data.length) {
     return (
@@ -216,6 +270,9 @@ export default function CustomChartRenderer({ chart, tasks }) {
       </div>
     )
   }
+
+  const hasNav = data.some((d) => getNavUrl(chart.data_source, d))
+  const cursorStyle = hasNav ? { cursor: 'pointer' } : {}
 
   switch (chart.chart_type) {
     case 'donut':
@@ -233,6 +290,8 @@ export default function CustomChartRenderer({ chart, tasks }) {
               paddingAngle={2}
               labelLine={false}
               label={renderDonutLabel}
+              onClick={handleClick}
+              style={cursorStyle}
             >
               {data.map((_, i) => (
                 <Cell key={i} fill={colors[i % colors.length]} />
@@ -247,7 +306,7 @@ export default function CustomChartRenderer({ chart, tasks }) {
     case 'bar_vertical':
       return (
         <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }} onClick={handleBarClick} style={cursorStyle}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="name" tick={{ fontSize: 12 }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
@@ -264,7 +323,7 @@ export default function CustomChartRenderer({ chart, tasks }) {
     case 'bar_horizontal':
       return (
         <ResponsiveContainer width="100%" height={Math.max(260, data.length * 40 + 40)}>
-          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 80 }}>
+          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 80 }} onClick={handleBarClick} style={cursorStyle}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
             <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={75} />
