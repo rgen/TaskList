@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useTask, useCreateTask, useUpdateTask } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import { subtasksApi, attachmentsApi } from '@/lib/api/subtasks'
@@ -9,8 +12,43 @@ import AttachmentList from './AttachmentList'
 import AttachmentInput from './AttachmentInput'
 import StatusSelect from './StatusSelect'
 
-function PendingSubtaskList({ items, onAdd, onRemove }) {
+function SortablePendingItem({ item, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center gap-2 group">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-0.5"
+        tabIndex={-1}
+      >
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+          <circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/>
+          <circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/>
+          <circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/>
+        </svg>
+      </button>
+      <span className="flex-1 text-sm text-gray-700">{item.name}</span>
+      <button
+        type="button"
+        onClick={() => onRemove(item.id)}
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+        aria-label="Remove subtask"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </li>
+  )
+}
+
+function PendingSubtaskList({ items, onAdd, onRemove, onReorder }) {
   const [newName, setNewName] = useState('')
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   function handleAdd() {
     if (!newName.trim()) return
@@ -22,29 +60,30 @@ function PendingSubtaskList({ items, onAdd, onRemove }) {
     if (e.key === 'Enter') { e.preventDefault(); handleAdd() }
   }
 
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex(i => i.id === active.id)
+      const newIndex = items.findIndex(i => i.id === over.id)
+      onReorder(arrayMove(items, oldIndex, newIndex))
+    }
+  }
+
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-700 mb-3">Subtasks</h3>
-      <ul className="space-y-2 mb-3">
-        {items.map((name, i) => (
-          <li key={i} className="flex items-center gap-2 group">
-            <span className="flex-1 text-sm text-gray-700">{name}</span>
-            <button
-              type="button"
-              onClick={() => onRemove(i)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-              aria-label="Remove subtask"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </li>
-        ))}
-        {items.length === 0 && (
-          <li className="text-sm text-gray-400 italic">No subtasks yet</li>
-        )}
-      </ul>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          <ul className="space-y-2 mb-3">
+            {items.map(item => (
+              <SortablePendingItem key={item.id} item={item} onRemove={onRemove} />
+            ))}
+            {items.length === 0 && (
+              <li className="text-sm text-gray-400 italic">No subtasks yet</li>
+            )}
+          </ul>
+        </SortableContext>
+      </DndContext>
       <div className="flex gap-2">
         <input
           type="text"
@@ -170,7 +209,7 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
     } else {
       const newTask = await createMutation.mutateAsync(payload)
       await Promise.all([
-        ...pendingSubtasks.map((name, i) => subtasksApi.create(newTask.id, { name, position: i })),
+        ...pendingSubtasks.map((item, i) => subtasksApi.create(newTask.id, { name: item.name, position: i })),
         ...pendingAttachments.map((att) => attachmentsApi.create(newTask.id, att)),
       ])
     }
@@ -323,8 +362,9 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
                 ) : (
                   <PendingSubtaskList
                     items={pendingSubtasks}
-                    onAdd={(name) => setPendingSubtasks((p) => [...p, name])}
-                    onRemove={(i) => setPendingSubtasks((p) => p.filter((_, idx) => idx !== i))}
+                    onAdd={(name) => setPendingSubtasks((p) => [...p, { id: `${Date.now()}-${Math.random()}`, name }])}
+                    onRemove={(id) => setPendingSubtasks((p) => p.filter(item => item.id !== id))}
+                    onReorder={(reordered) => setPendingSubtasks(reordered)}
                   />
                 )}
               </div>
