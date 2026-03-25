@@ -1,28 +1,40 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns'
 import clsx from 'clsx'
 import { useTasks } from '@/hooks/useTasks'
+import { useCategories } from '@/hooks/useCategories'
 import TaskModal from '@/components/tasks/TaskModal'
 
-const PRIORITY_COLORS = {
-  high:   'bg-red-100 text-red-700 border-red-200',
-  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  low:    'bg-green-100 text-green-700 border-green-200',
-}
+const PALETTE = [
+  '#3b82f6', // blue
+  '#8b5cf6', // violet
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#06b6d4', // cyan
+  '#f43f5e', // rose
+  '#84cc16', // lime
+  '#a855f7', // purple
+  '#14b8a6', // teal
+]
 
-const STATUS_STRIKE = 'line-through opacity-60'
+const STATUS_STRIKE = 'line-through opacity-50'
 
 function buildCalendarDays(month) {
   const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 })
   const end = endOfWeek(endOfMonth(month), { weekStartsOn: 0 })
   const days = []
   let cur = start
-  while (cur <= end) {
-    days.push(cur)
-    cur = addDays(cur, 1)
-  }
+  while (cur <= end) { days.push(cur); cur = addDays(cur, 1) }
   return days
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `${r}, ${g}, ${b}`
 }
 
 export default function CalendarView() {
@@ -31,6 +43,16 @@ export default function CalendarView() {
   const [modalOpen, setModalOpen] = useState(false)
 
   const { data: tasks = [] } = useTasks()
+  const { data: categories = [] } = useCategories()
+
+  // Build a stable color map: category id → hex color
+  const categoryColors = useMemo(() => {
+    const map = {}
+    categories.forEach((cat, i) => {
+      map[cat.id] = PALETTE[i % PALETTE.length]
+    })
+    return map
+  }, [categories])
 
   const days = buildCalendarDays(currentMonth)
   const today = new Date()
@@ -40,10 +62,17 @@ export default function CalendarView() {
     return tasks.filter((t) => t.due_date === dayStr)
   }
 
+  function getColor(task) {
+    return task.category_id ? (categoryColors[task.category_id] || '#6b7280') : '#6b7280'
+  }
+
   function openTask(id) {
     setEditTaskId(id)
     setModalOpen(true)
   }
+
+  // Only show categories that appear in tasks
+  const usedCategories = categories.filter(c => tasks.some(t => t.category_id === c.id))
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -107,7 +136,6 @@ export default function CalendarView() {
                 (i + 1) % 7 === 0 && 'border-r-0'
               )}
             >
-              {/* Day number */}
               <div className="mb-1.5">
                 <span
                   className={clsx(
@@ -119,23 +147,29 @@ export default function CalendarView() {
                 </span>
               </div>
 
-              {/* Tasks */}
               <div className="space-y-1">
-                {dayTasks.map((task) => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    onClick={() => openTask(task.id)}
-                    className={clsx(
-                      'w-full text-left text-xs px-1.5 py-0.5 rounded border font-medium truncate transition-opacity hover:opacity-80',
-                      PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium,
-                      task.status === 'completed' && STATUS_STRIKE
-                    )}
-                    title={task.name}
-                  >
-                    {task.name}
-                  </button>
-                ))}
+                {dayTasks.map((task) => {
+                  const color = getColor(task)
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => openTask(task.id)}
+                      className={clsx(
+                        'w-full text-left text-xs px-1.5 py-0.5 rounded font-medium truncate transition-opacity hover:opacity-80',
+                        task.status === 'completed' && STATUS_STRIKE
+                      )}
+                      style={{
+                        backgroundColor: `rgba(${hexToRgb(color)}, 0.15)`,
+                        color,
+                        borderLeft: `3px solid ${color}`,
+                      }}
+                      title={task.name}
+                    >
+                      {task.name}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )
@@ -143,13 +177,26 @@ export default function CalendarView() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-6 py-3 border-t border-gray-100 bg-gray-50">
-        <span className="text-xs text-gray-500 font-medium">Priority:</span>
-        {[['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([p, label]) => (
-          <span key={p} className={clsx('text-xs px-2 py-0.5 rounded border font-medium', PRIORITY_COLORS[p])}>
-            {label}
+      <div className="flex items-center flex-wrap gap-3 px-6 py-3 border-t border-gray-100 bg-gray-50">
+        <span className="text-xs text-gray-500 font-medium">Category:</span>
+        {usedCategories.length === 0 && (
+          <span className="text-xs text-gray-400">No categories assigned</span>
+        )}
+        {usedCategories.map((cat) => (
+          <span key={cat.id} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+            <span
+              className="inline-block w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: categoryColors[cat.id] }}
+            />
+            {cat.name}
           </span>
         ))}
+        {tasks.some(t => !t.category_id) && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+            <span className="inline-block w-3 h-3 rounded-full bg-gray-400 shrink-0" />
+            Uncategorized
+          </span>
+        )}
       </div>
 
       <TaskModal
