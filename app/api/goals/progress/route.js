@@ -24,25 +24,27 @@ export async function GET(request) {
         c.name AS category_name,
         sc.name AS subcategory_name,
         wb.week_start,
-        wb.week_end,
         -- Current week stats
         COUNT(t.id) FILTER (
-          WHERE t.due_date::date >= wb.week_start AND t.due_date::date < wb.week_end
+          WHERE t.due_date IS NOT NULL
+            AND t.due_date::date >= wb.week_start
+            AND t.due_date::date < wb.week_end
         )::int AS week_tasks,
         COUNT(t.id) FILTER (
           WHERE t.status = 'completed'
-            AND t.due_date::date >= wb.week_start AND t.due_date::date < wb.week_end
+            AND t.due_date IS NOT NULL
+            AND t.due_date::date >= wb.week_start
+            AND t.due_date::date < wb.week_end
         )::int AS week_tasks_done,
         COALESCE(SUM(t.hours_logged) FILTER (
-          WHERE t.due_date::date >= wb.week_start AND t.due_date::date < wb.week_end
+          WHERE t.due_date IS NOT NULL
+            AND t.due_date::date >= wb.week_start
+            AND t.due_date::date < wb.week_end
         ), 0)::numeric AS week_hours_logged,
         -- All time stats
         COUNT(t.id)::int AS total_tasks,
         COUNT(t.id) FILTER (WHERE t.status = 'completed')::int AS total_tasks_done,
-        COALESCE(SUM(t.hours_logged), 0)::numeric AS total_hours_logged,
-        COALESCE(SUM(wg.hours_per_week * (
-          EXTRACT(EPOCH FROM (LEAST(wg.end_date::date, wb.week_end) - wg.start_date::date)) / (7 * 86400)
-        )), 0)::numeric AS total_hours_goal
+        COALESCE(SUM(t.hours_logged), 0)::numeric AS total_hours_logged
       FROM weekly_goals wg
       CROSS JOIN week_bounds wb
       LEFT JOIN categories c ON c.id = wg.category_id

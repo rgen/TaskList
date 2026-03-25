@@ -3,7 +3,10 @@ import { useGoalProgress } from '@/hooks/useGoals'
 import { format, parseISO } from 'date-fns'
 
 function formatDate(d) {
-  try { return format(parseISO(d), 'MMM d') } catch { return d }
+  try {
+    const date = typeof d === 'string' ? parseISO(d) : new Date(d)
+    return format(date, 'MMM d, yyyy')
+  } catch { return String(d) }
 }
 
 function ProgressBar({ value, max, color = 'bg-blue-500' }) {
@@ -28,6 +31,7 @@ function GoalCard({ goal }) {
     : 0
 
   const isActive = new Date(goal.start_date) <= new Date() && new Date(goal.end_date) >= new Date()
+
 
   return (
     <div className={`bg-white rounded-xl border p-5 ${isActive ? 'border-blue-200' : 'border-gray-200 opacity-70'}`}>
@@ -91,10 +95,16 @@ function GoalCard({ goal }) {
 }
 
 export default function GoalProgress() {
-  const { data: goals = [], isLoading } = useGoalProgress()
+  const { data: goals = [], isLoading, error } = useGoalProgress()
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-40 text-gray-400 text-sm">Loading…</div>
+  )
+
+  if (error) return (
+    <div className="text-center py-16 text-red-500 text-sm">
+      Error loading progress: {error.message}
+    </div>
   )
 
   if (!goals.length) return (
@@ -103,7 +113,8 @@ export default function GoalProgress() {
     </div>
   )
 
-  const active = goals.filter(g => new Date(g.start_date) <= new Date() && new Date(g.end_date) >= new Date())
+  const now = new Date()
+  const active = goals.filter(g => new Date(g.start_date) <= now && new Date(g.end_date) >= now)
   const inactive = goals.filter(g => !active.includes(g))
 
   return (
