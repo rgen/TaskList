@@ -17,6 +17,7 @@ export function useCreateSubtask(taskId) {
     mutationFn: (data) => subtasksApi.create(taskId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TASKS_KEY, taskId] })
+      qc.invalidateQueries({ queryKey: [TASKS_KEY] })
     },
   })
 }
@@ -27,6 +28,7 @@ export function useUpdateSubtask(taskId) {
     mutationFn: ({ id, data }) => subtasksApi.update(taskId, id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TASKS_KEY, taskId] })
+      qc.invalidateQueries({ queryKey: [TASKS_KEY] })
     },
   })
 }
@@ -37,6 +39,7 @@ export function useReorderSubtasks(taskId) {
     mutationFn: (orderedIds) => subtasksApi.reorder(taskId, orderedIds),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TASKS_KEY, taskId] })
+      qc.invalidateQueries({ queryKey: [TASKS_KEY] })
     },
   })
 }
@@ -47,6 +50,7 @@ export function useDeleteSubtask(taskId) {
     mutationFn: (id) => subtasksApi.delete(taskId, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [TASKS_KEY, taskId] })
+      qc.invalidateQueries({ queryKey: [TASKS_KEY] })
     },
   })
 }
