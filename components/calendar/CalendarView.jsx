@@ -19,6 +19,18 @@ const PALETTE = [
   '#14b8a6', // teal
 ]
 
+const PRIORITY_COLORS = {
+  high:   '#ef4444',
+  medium: '#f59e0b',
+  low:    '#22c55e',
+}
+
+const PRIORITY_LABELS = [
+  { key: 'high',   label: 'High' },
+  { key: 'medium', label: 'Medium' },
+  { key: 'low',    label: 'Low' },
+]
+
 const STATUS_STRIKE = 'line-through opacity-50'
 
 function buildCalendarDays(month) {
@@ -41,6 +53,7 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [editTaskId, setEditTaskId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [colorBy, setColorBy] = useState('category') // 'category' | 'priority'
 
   const { data: tasks = [] } = useTasks()
   const { data: categories = [] } = useCategories()
@@ -63,6 +76,7 @@ export default function CalendarView() {
   }
 
   function getColor(task) {
+    if (colorBy === 'priority') return PRIORITY_COLORS[task.priority] || '#6b7280'
     return task.category_id ? (categoryColors[task.category_id] || '#6b7280') : '#6b7280'
   }
 
@@ -81,7 +95,29 @@ export default function CalendarView() {
         <h2 className="text-lg font-semibold text-gray-900">
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          {/* Color-by toggle */}
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setColorBy('category')}
+              className={clsx(
+                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                colorBy === 'category' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              Category
+            </button>
+            <button
+              onClick={() => setColorBy('priority')}
+              className={clsx(
+                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                colorBy === 'priority' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              Priority
+            </button>
+          </div>
+
           <button
             onClick={() => setCurrentMonth(new Date())}
             className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -178,24 +214,35 @@ export default function CalendarView() {
 
       {/* Legend */}
       <div className="flex items-center flex-wrap gap-3 px-6 py-3 border-t border-gray-100 bg-gray-50">
-        <span className="text-xs text-gray-500 font-medium">Category:</span>
-        {usedCategories.length === 0 && (
-          <span className="text-xs text-gray-400">No categories assigned</span>
-        )}
-        {usedCategories.map((cat) => (
-          <span key={cat.id} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-            <span
-              className="inline-block w-3 h-3 rounded-full shrink-0"
-              style={{ backgroundColor: categoryColors[cat.id] }}
-            />
-            {cat.name}
-          </span>
-        ))}
-        {tasks.some(t => !t.category_id) && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
-            <span className="inline-block w-3 h-3 rounded-full bg-gray-400 shrink-0" />
-            Uncategorized
-          </span>
+        {colorBy === 'category' ? (
+          <>
+            <span className="text-xs text-gray-500 font-medium">Category:</span>
+            {usedCategories.length === 0 && (
+              <span className="text-xs text-gray-400">No categories assigned</span>
+            )}
+            {usedCategories.map((cat) => (
+              <span key={cat.id} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: categoryColors[cat.id] }} />
+                {cat.name}
+              </span>
+            ))}
+            {tasks.some(t => !t.category_id) && (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                <span className="inline-block w-3 h-3 rounded-full bg-gray-400 shrink-0" />
+                Uncategorized
+              </span>
+            )}
+          </>
+        ) : (
+          <>
+            <span className="text-xs text-gray-500 font-medium">Priority:</span>
+            {PRIORITY_LABELS.map(({ key, label }) => (
+              <span key={key} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: PRIORITY_COLORS[key] }} />
+                {label}
+              </span>
+            ))}
+          </>
         )}
       </div>
 
