@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTasks } from '@/hooks/useTasks'
+import { useCategories } from '@/hooks/useCategories'
 import TaskRow from './TaskRow'
 import GridEditRow from './GridEditRow'
 import TaskModal from './TaskModal'
@@ -8,8 +9,48 @@ import TaskFilters from './TaskFilters'
 import DeleteConfirm from './DeleteConfirm'
 import ArchiveConfirm from './ArchiveConfirm'
 
+const STORAGE_KEY = 'task_filters'
+const BASE_FILTERS = { sort: 'created_at', order: 'desc' }
+
+function initFilters(initialFilters) {
+  // If navigated here from dashboard with specific filters, respect those
+  const hasSpecific = Object.keys(initialFilters).some(k => !['sort', 'order'].includes(k))
+  if (hasSpecific) return { ...BASE_FILTERS, ...initialFilters }
+  // Otherwise load from localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) return JSON.parse(saved)
+    } catch {}
+  }
+  return BASE_FILTERS
+}
+
 export default function TaskTable({ initialFilters = {} }) {
-  const [filters, setFilters] = useState({ sort: 'created_at', order: 'desc', ...initialFilters })
+  const [filters, setFilters] = useState(() => initFilters(initialFilters))
+  const { data: categories = [] } = useCategories()
+  const schoolWorkSet = useRef(false)
+
+  // Auto-default to School Work category on first ever load (no saved preference)
+  useEffect(() => {
+    if (schoolWorkSet.current) return
+    if (filters.category_id) { schoolWorkSet.current = true; return }
+    if (!categories.length) return
+    const schoolWork = categories.find(c => c.name.toLowerCase() === 'school work')
+    if (schoolWork) {
+      const updated = { ...filters, category_id: String(schoolWork.id) }
+      setFilters(updated)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    }
+    schoolWorkSet.current = true
+  }, [categories])
+
+  // Persist filters to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filters))
+    }
+  }, [filters])
   const [modalOpen, setModalOpen] = useState(false)
   const [editTaskId, setEditTaskId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
