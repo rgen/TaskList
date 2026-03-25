@@ -53,7 +53,10 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [editTaskId, setEditTaskId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [colorBy, setColorBy] = useState('priority') // 'category' | 'priority'
+  const [colorBy, setColorBy] = useState(() => {
+    if (typeof window === 'undefined') return 'priority'
+    return localStorage.getItem('calendar_color_by') || 'priority'
+  })
 
   const { data: tasks = [] } = useTasks()
   const { data: categories = [] } = useCategories()
@@ -99,7 +102,7 @@ export default function CalendarView() {
           {/* Color-by toggle */}
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setColorBy('category')}
+              onClick={() => { setColorBy('category'); localStorage.setItem('calendar_color_by', 'category') }}
               className={clsx(
                 'px-3 py-1 text-xs font-medium rounded-md transition-colors',
                 colorBy === 'category' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
@@ -108,7 +111,7 @@ export default function CalendarView() {
               Category
             </button>
             <button
-              onClick={() => setColorBy('priority')}
+              onClick={() => { setColorBy('priority'); localStorage.setItem('calendar_color_by', 'priority') }}
               className={clsx(
                 'px-3 py-1 text-xs font-medium rounded-md transition-colors',
                 colorBy === 'priority' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
