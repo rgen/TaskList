@@ -65,7 +65,7 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   function formatDate(dateStr) {
     if (!dateStr) return '—'
     try {
-      return format(parseISO(dateStr), 'MMM d, yyyy')
+      return format(parseISO(dateStr), 'EEE, MMM d, yyyy')
     } catch {
       return dateStr
     }
