@@ -73,7 +73,7 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
 
   return (
     <>
-    <tr className={clsx('border-b border-gray-100 hover:bg-gray-50 transition-colors', task.status === 'completed' && 'line-through text-gray-400')}>
+    <tr className={clsx('border-b border-gray-100 hover:bg-gray-50 transition-colors', task.status === 'completed' && 'text-gray-400')} style={task.status === 'completed' ? { textDecoration: 'line-through', textDecorationThickness: '2px' } : {}}>
       {/* Checkbox */}
       <td className="pl-4 pr-2 py-3 w-10">
         <input
