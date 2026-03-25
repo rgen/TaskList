@@ -249,16 +249,28 @@ function getNavUrl(dataSource, entry) {
 }
 
 const RADIAN = Math.PI / 180
-function renderDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
+function renderDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }) {
   if (percent < 0.05) return null
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
   const y = cy + radius * Math.sin(-midAngle * RADIAN)
   return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
+    <g>
+      <text x={x} y={y - 7} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={700}>
+        {value}
+      </text>
+      <text x={x} y={y + 7} fill="rgba(255,255,255,0.85)" textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={500}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    </g>
   )
+}
+
+function donutTooltipFormatter(value, name, props) {
+  const percent = props?.payload?.percent
+    ? `${(props.payload.percent * 100).toFixed(1)}%`
+    : ''
+  return [`${value} (${percent})`, name]
 }
 
 export default function CustomChartRenderer({ chart, tasks }) {
@@ -315,8 +327,11 @@ export default function CustomChartRenderer({ chart, tasks }) {
                 <Cell key={i} fill={colors[i % colors.length]} />
               ))}
             </Pie>
-            <Tooltip />
-            <Legend />
+            <Tooltip formatter={donutTooltipFormatter} />
+            <Legend formatter={(value, entry) => {
+              const item = data.find((d) => d.name === value)
+              return item ? `${value} (${item.value})` : value
+            }} />
           </PieChart>
         </ResponsiveContainer>
       )
