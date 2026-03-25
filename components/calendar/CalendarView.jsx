@@ -1,8 +1,8 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns'
 import clsx from 'clsx'
-import { useTasks } from '@/hooks/useTasks'
+import { useTasks, useUpdateTask } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import TaskModal from '@/components/tasks/TaskModal'
 
@@ -53,6 +53,7 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [editTaskId, setEditTaskId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [dropTarget, setDropTarget] = useState(null)
   const [colorBy, setColorBy] = useState(() => {
     if (typeof window === 'undefined') return 'priority'
     return localStorage.getItem('calendar_color_by') || 'priority'
@@ -60,6 +61,7 @@ export default function CalendarView() {
 
   const { data: tasks = [] } = useTasks()
   const { data: categories = [] } = useCategories()
+  const updateTask = useUpdateTask()
 
   // Build a stable color map: category id → hex color
   const categoryColors = useMemo(() => {
@@ -87,6 +89,44 @@ export default function CalendarView() {
     setEditTaskId(id)
     setModalOpen(true)
   }
+
+  // Drag-and-drop handlers
+  const handleDragStart = useCallback((e, task) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', task.id.toString())
+    e.currentTarget.style.opacity = '0.5'
+  }, [])
+
+  const handleDragEnd = useCallback((e) => {
+    e.currentTarget.style.opacity = '1'
+    setDropTarget(null)
+  }, [])
+
+  const handleDragOver = useCallback((e, day) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDropTarget(format(day, 'yyyy-MM-dd'))
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setDropTarget(null)
+  }, [])
+
+  const handleDrop = useCallback(
+    (e, day) => {
+      e.preventDefault()
+      setDropTarget(null)
+      const taskId = parseInt(e.dataTransfer.getData('text/plain'), 10)
+      if (!taskId) return
+
+      const newDate = format(day, 'yyyy-MM-dd')
+      const task = tasks.find((t) => t.id === taskId)
+      if (!task || task.due_date === newDate) return
+
+      updateTask.mutate({ id: taskId, data: { due_date: newDate } })
+    },
+    [tasks, updateTask]
+  )
 
   // Only show categories that appear in tasks
   const usedCategories = categories.filter(c => tasks.some(t => t.category_id === c.id))
@@ -164,16 +204,22 @@ export default function CalendarView() {
           const isToday = isSameDay(day, today)
           const isCurrentMonth = isSameMonth(day, currentMonth)
           const isLastRow = i >= days.length - 7
+          const dateKey = format(day, 'yyyy-MM-dd')
+          const isDrop = dropTarget === dateKey
 
           return (
             <div
               key={day.toISOString()}
               className={clsx(
-                'min-h-[120px] p-2 border-b border-r border-gray-100',
+                'min-h-[120px] p-2 border-b border-r border-gray-100 transition-colors',
                 !isCurrentMonth && 'bg-gray-50',
                 isLastRow && 'border-b-0',
-                (i + 1) % 7 === 0 && 'border-r-0'
+                (i + 1) % 7 === 0 && 'border-r-0',
+                isDrop && 'bg-blue-50 ring-2 ring-inset ring-blue-300'
               )}
+              onDragOver={(e) => handleDragOver(e, day)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, day)}
             >
               <div className="mb-1.5">
                 <span
@@ -193,9 +239,12 @@ export default function CalendarView() {
                     <button
                       key={task.id}
                       type="button"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task)}
+                      onDragEnd={handleDragEnd}
                       onClick={() => openTask(task.id)}
                       className={clsx(
-                        'w-full text-left text-xs px-1.5 py-0.5 rounded font-medium truncate transition-opacity hover:opacity-80',
+                        'w-full text-left text-xs px-1.5 py-0.5 rounded font-medium truncate transition-opacity hover:opacity-80 cursor-grab active:cursor-grabbing',
                         task.status === 'completed' && STATUS_STRIKE
                       )}
                       style={{
