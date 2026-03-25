@@ -47,3 +47,17 @@ CREATE TABLE IF NOT EXISTS api_keys (
   key TEXT NOT NULL UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS custom_charts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  chart_type TEXT NOT NULL DEFAULT 'donut',
+  data_source TEXT NOT NULL DEFAULT 'status',
+  config JSONB DEFAULT '{}',
+  span TEXT NOT NULL DEFAULT 'half',
+  show_on_dashboard BOOLEAN NOT NULL DEFAULT TRUE,
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);

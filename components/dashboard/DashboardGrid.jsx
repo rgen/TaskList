@@ -16,6 +16,9 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useDashboardSummary, useDashboardWeek } from '@/hooks/useDashboard'
+import { useCustomCharts } from '@/hooks/useCustomCharts'
+import { useTasks } from '@/hooks/useTasks'
+import CustomChartRenderer from '@/components/reports/CustomChartRenderer'
 import StatusDonutChart from './StatusDonutChart'
 import WeeklyBarChart from './WeeklyBarChart'
 import PriorityBarChart from './PriorityBarChart'
@@ -78,6 +81,11 @@ function SortableChartCard({ chart, children }) {
 export default function DashboardGrid() {
   const { data: summary, isLoading: sumLoading } = useDashboardSummary()
   const { data: week, isLoading: weekLoading } = useDashboardWeek()
+  const { data: customCharts = [] } = useCustomCharts()
+  const { data: allTasks = [] } = useTasks()
+
+  // Custom charts that should show on dashboard
+  const dashboardCustomCharts = customCharts.filter((c) => c.show_on_dashboard)
 
   const [charts, setCharts] = useState(() => {
     if (typeof window === 'undefined') return DEFAULT_CHARTS
@@ -145,6 +153,29 @@ export default function DashboardGrid() {
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Custom charts from Reports */}
+      {dashboardCustomCharts.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Custom Reports</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {dashboardCustomCharts.map((chart) => (
+              <div
+                key={chart.id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm"
+                style={{ gridColumn: chart.span === 'full' ? 'span 2 / span 2' : undefined }}
+              >
+                <div className="px-5 pt-4 pb-0">
+                  <h3 className="text-sm font-semibold text-gray-700">{chart.name}</h3>
+                </div>
+                <div className="px-5 pb-5 pt-3">
+                  <CustomChartRenderer chart={chart} tasks={allTasks} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
