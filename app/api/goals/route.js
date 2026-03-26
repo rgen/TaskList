@@ -2,11 +2,10 @@ import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 
-function getMondayOfWeek(dateStr) {
+function getSundayOfWeek(dateStr) {
   const d = new Date(dateStr + 'T12:00:00Z')
   const day = d.getUTCDay()
-  const diff = day === 0 ? -6 : 1 - day
-  d.setUTCDate(d.getUTCDate() + diff)
+  d.setUTCDate(d.getUTCDate() - day)
   return d.toISOString().slice(0, 10)
 }
 
@@ -52,7 +51,7 @@ export async function POST(request) {
     // Generate recurring tasks week by week
     const hoursPerTask = Math.round((hpw / tpw) * 100) / 100
     const endDate = new Date(end_date + 'T12:00:00Z')
-    let weekStart = getMondayOfWeek(start_date)
+    let weekStart = getSundayOfWeek(start_date)
     let weekNum = 1
 
     while (new Date(weekStart + 'T12:00:00Z') <= endDate) {
