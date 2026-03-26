@@ -77,7 +77,11 @@ export default function TaskTable({ initialFilters = {} }) {
 
   function handleQuickAdd() {
     if (!quickAddName.trim()) return
-    createTask.mutate({ name: quickAddName.trim() }, {
+    const quickCat = categories.find(c => c.name.toLowerCase() === 'quick tasks')
+    createTask.mutate({
+      name: quickAddName.trim(),
+      category_id: quickCat?.id || null,
+    }, {
       onSuccess: () => setQuickAddName(''),
     })
   }
