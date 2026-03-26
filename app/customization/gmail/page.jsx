@@ -25,7 +25,7 @@ function GmailContent() {
 
   // Auto-import polling
   useEffect(() => {
-    if (!autoImport || !status?.hasGmailScope) return
+    if (!autoImport || !status?.hasGmailScope || !status?.enabled) return
 
     // Import immediately on enable
     importMutation.mutate(undefined, {
@@ -45,7 +45,7 @@ function GmailContent() {
     }, 5 * 60 * 1000) // 5 minutes
 
     return () => clearInterval(interval)
-  }, [autoImport, status?.hasGmailScope])
+  }, [autoImport, status?.hasGmailScope, status?.enabled])
 
   function toggleAutoImport() {
     const next = !autoImport
@@ -86,7 +86,7 @@ function GmailContent() {
     })
   }
 
-  const hasGmailScope = status?.hasGmailScope
+  const isGmailActive = status?.hasGmailScope && status?.enabled
 
   return (
     <>
@@ -102,7 +102,7 @@ function GmailContent() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Loading…</div>
-      ) : !hasGmailScope ? (
+      ) : !isGmailActive ? (
         /* Not Connected State */
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
