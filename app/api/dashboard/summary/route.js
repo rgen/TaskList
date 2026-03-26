@@ -27,11 +27,11 @@ export async function GET(request) {
     const { rows: byWeekRows } = await sql`
       SELECT
         CASE
-          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) THEN 'overdue'
-          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '7 days' THEN 'this_week'
-          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '14 days' THEN 'next_week'
-          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '21 days' THEN 'week_3'
-          WHEN due_date::date < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '28 days' THEN 'week_4'
+          WHEN due_date::date < (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day')::date THEN 'overdue'
+          WHEN due_date::date < (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day' + INTERVAL '7 days')::date THEN 'this_week'
+          WHEN due_date::date < (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day' + INTERVAL '14 days')::date THEN 'next_week'
+          WHEN due_date::date < (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day' + INTERVAL '21 days')::date THEN 'week_3'
+          WHEN due_date::date < (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day' + INTERVAL '28 days')::date THEN 'week_4'
           ELSE 'week_5plus'
         END AS bucket,
         COUNT(*)::int as count

@@ -40,7 +40,7 @@ function GoalCard({ goal }) {
   const isActive = new Date(goal.start_date) <= new Date() && new Date(goal.end_date) >= new Date()
 
   const now = new Date()
-  const ws = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const ws = format(startOfWeek(now, { weekStartsOn: 0 }), 'yyyy-MM-dd')
 
   // All tasks for this goal
   const allGoalTasks = buildUrl({

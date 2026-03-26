@@ -12,7 +12,7 @@ export async function GET(request) {
     // Get all tasks with hours_logged grouped by week and category
     const { rows } = await sql`
       SELECT
-        DATE_TRUNC('week', t.due_date::date)::date AS week_start,
+        (DATE_TRUNC('week', t.due_date::date + INTERVAL '1 day') - INTERVAL '1 day')::date AS week_start,
         COALESCE(c.name, 'Uncategorized') AS category_name,
         c.id AS category_id,
         SUM(COALESCE(t.hours_logged, 0)) AS total_hours

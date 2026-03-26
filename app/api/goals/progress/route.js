@@ -11,8 +11,8 @@ export async function GET(request) {
     const { rows } = await sql`
       WITH week_bounds AS (
         SELECT
-          DATE_TRUNC('week', CURRENT_DATE)::date AS week_start,
-          (DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '7 days')::date AS week_end
+          (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day')::date AS week_start,
+          (DATE_TRUNC('week', CURRENT_DATE + INTERVAL '1 day') - INTERVAL '1 day' + INTERVAL '7 days')::date AS week_end
       )
       SELECT
         wg.id,
