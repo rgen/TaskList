@@ -16,7 +16,7 @@ export async function GET(request) {
     const url = await getAuthUrl(Number(user.id), {
       scopes: [
         'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.modify',
       ],
       returnTo: 'gmail',
     })
