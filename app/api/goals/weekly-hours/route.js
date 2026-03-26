@@ -51,12 +51,16 @@ export async function GET(request) {
     const weeks = Array.from(weekSet).sort((a, b) => new Date(a) - new Date(b))
 
     // For each week and category, find the applicable goal target
+    // A goal matches a week if the goal's date range overlaps with the week (Sun-Sat)
     function getGoalTarget(weekStart, categoryName) {
-      const weekDate = new Date(weekStart)
+      const wsDate = new Date(weekStart)
+      const weDate = new Date(weekStart)
+      weDate.setDate(weDate.getDate() + 6) // Saturday
+
       const matchingGoals = goalRows.filter((g) =>
         g.category_name === categoryName &&
-        new Date(g.start_date) <= weekDate &&
-        new Date(g.end_date) >= weekDate
+        new Date(g.start_date) <= weDate &&
+        new Date(g.end_date) >= wsDate
       )
       if (!matchingGoals.length) return null
       return matchingGoals.reduce((sum, g) => sum + Number(g.hours_per_week), 0)
