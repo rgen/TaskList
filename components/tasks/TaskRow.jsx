@@ -101,6 +101,17 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
           >
             {task.name}
           </span>
+          <div className="flex gap-1.5 flex-wrap">
+            {task.is_overdue && <OverdueBadge />}
+            <NewBadge createdAt={task.created_at} />
+            {task.goal_id && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">
+                {task.hours_logged != null
+                  ? `${task.hours_logged}h / ${task.hours_goal ?? '?'}h`
+                  : task.hours_goal != null ? `Goal: ${task.hours_goal}h` : 'Goal task'}
+              </span>
+            )}
+          </div>
           {task.notes && (
             <>
               <button
@@ -123,17 +134,6 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
               )}
             </>
           )}
-          <div className="flex gap-1.5 flex-wrap">
-            {task.is_overdue && <OverdueBadge />}
-            <NewBadge createdAt={task.created_at} />
-            {task.goal_id && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">
-                {task.hours_logged != null
-                  ? `${task.hours_logged}h / ${task.hours_goal ?? '?'}h`
-                  : task.hours_goal != null ? `Goal: ${task.hours_goal}h` : 'Goal task'}
-              </span>
-            )}
-          </div>
           {task.subtask_count > 0 && (
             <>
               <button
