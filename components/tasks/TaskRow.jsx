@@ -252,48 +252,6 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
               </span>
             )}
           </div>
-          {(task.notes || task.subtask_count > 0) && (
-            <>
-              <div className="flex items-center gap-3 mt-0.5">
-                {task.notes && (
-                  <button
-                    type="button"
-                    onClick={() => setNotesOpen((o) => !o)}
-                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    <svg
-                      className={clsx('w-3 h-3 transition-transform duration-150', notesOpen && 'rotate-90')}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    {notesOpen ? 'Hide Notes' : 'Read Notes'}
-                  </button>
-                )}
-                {task.subtask_count > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSubtasksOpen((o) => !o)}
-                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    <svg
-                      className={clsx('w-3 h-3 transition-transform duration-150', subtasksOpen && 'rotate-90')}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    {subtasksOpen ? 'Hide Subtasks' : `Open Subtasks (${task.subtask_count})`}
-                  </button>
-                )}
-              </div>
-              {notesOpen && task.notes && (
-                <div className="text-xs text-gray-500 whitespace-pre-wrap bg-gray-50 rounded-lg p-3 max-w-md max-h-60 overflow-y-auto">
-                  {task.notes}
-                </div>
-              )}
-              {subtasksOpen && task.subtask_count > 0 && <InlineSubtasks taskId={task.id} />}
-            </>
-          )}
         </div>
       </td>
 
