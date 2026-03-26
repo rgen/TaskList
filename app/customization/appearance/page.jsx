@@ -21,8 +21,8 @@ const THEMES = [
     description: 'Easy on the eyes with a sleek dark interface',
     preview: {
       sidebar: '#1f2937',
-      body: '#1f2937',
-      card: '#374151',
+      body: '#374151',
+      card: '#4b5563',
       accent: '#3b82f6',
       text: '#f9fafb',
     },
