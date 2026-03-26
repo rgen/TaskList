@@ -148,11 +148,13 @@ export default function Sidebar() {
               key={item.to}
               href={item.to}
               className={clsx(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
               )}
+              style={isActive
+                ? { backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }
+                : { color: 'var(--text-sidebar)' }
+              }
             >
               {item.icon}
               {item.label}
@@ -165,11 +167,13 @@ export default function Sidebar() {
           <button
             onClick={() => setGoalsOpen((v) => !v)}
             className={clsx(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-              isGoalsActive
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+              isGoalsActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
             )}
+            style={isGoalsActive
+              ? { backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }
+              : { color: 'var(--text-sidebar)' }
+            }
           >
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -193,11 +197,13 @@ export default function Sidebar() {
                     key={item.to}
                     href={item.to}
                     className={clsx(
-                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                      isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
                     )}
+                    style={isActive
+                      ? { backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }
+                      : { color: 'var(--text-sidebar)' }
+                    }
                   >
                     {item.icon}
                     {item.label}
@@ -213,11 +219,13 @@ export default function Sidebar() {
           <button
             onClick={() => setCustomizationOpen((v) => !v)}
             className={clsx(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-              isCustomizationActive
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+              'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+              isCustomizationActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
             )}
+            style={isCustomizationActive
+              ? { backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }
+              : { color: 'var(--text-sidebar)' }
+            }
           >
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -241,11 +249,13 @@ export default function Sidebar() {
                     key={item.to}
                     href={item.to}
                     className={clsx(
-                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                      isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
                     )}
+                    style={isActive
+                      ? { backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }
+                      : { color: 'var(--text-sidebar)' }
+                    }
                   >
                     {item.icon}
                     {item.label}
@@ -258,7 +268,8 @@ export default function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all opacity-80 hover:opacity-100"
+          style={{ color: 'var(--text-sidebar)' }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -267,8 +278,8 @@ export default function Sidebar() {
           Sign Out
         </button>
       </nav>
-      <div className="p-4 border-t border-gray-200">
-        <p className="text-xs text-gray-400 text-center">TaskList v1.0</p>
+      <div className="p-4" style={{ borderTop: '1px solid var(--border-sidebar)' }}>
+        <p className="text-xs text-center" style={{ color: 'var(--text-sidebar)', opacity: 0.5 }}>TaskList v1.0</p>
       </div>
     </aside>
   )
