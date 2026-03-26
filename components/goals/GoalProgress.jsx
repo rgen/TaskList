@@ -1,6 +1,7 @@
 'use client'
+import Link from 'next/link'
 import { useGoalProgress } from '@/hooks/useGoals'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns'
 
 function formatDate(d) {
   try {
@@ -32,14 +33,29 @@ function GoalCard({ goal }) {
 
   const isActive = new Date(goal.start_date) <= new Date() && new Date(goal.end_date) >= new Date()
 
+  // Build filter URLs
+  const catFilter = goal.category_id ? `category_id=${goal.category_id}` : ''
+  const subFilter = goal.subcategory_id ? `&subcategory_id=${goal.subcategory_id}` : ''
+  const baseFilter = `/tasks?${catFilter}${subFilter}`
+
+  const now = new Date()
+  const ws = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const thisWeekFilter = `${baseFilter}&week_start=${ws}`
+
+  const completedFilter = `${baseFilter}&status=completed`
+  const allTasksFilter = baseFilter
 
   return (
     <div className={`bg-white rounded-xl border p-5 ${isActive ? 'border-blue-200' : 'border-gray-200 opacity-70'}`}>
       <div className="flex items-start justify-between gap-2 mb-1">
         <div>
-          <h3 className="font-semibold text-gray-900 text-sm">{goal.name}</h3>
-          <p className="text-xs text-gray-500">
-            {goal.category_name}{goal.subcategory_name ? ` › ${goal.subcategory_name}` : ''}
+          <Link href={allTasksFilter} className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition-colors">
+            {goal.name}
+          </Link>
+          <p className="text-xs">
+            <Link href={allTasksFilter} className="text-gray-500 hover:text-blue-600 transition-colors">
+              {goal.category_name}{goal.subcategory_name ? ` › ${goal.subcategory_name}` : ''}
+            </Link>
           </p>
         </div>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${isActive ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -55,40 +71,40 @@ function GoalCard({ goal }) {
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">This Week</p>
 
       <div className="space-y-3 mb-4">
-        <div>
+        <Link href={thisWeekFilter} className="block group">
           <div className="flex justify-between text-xs text-gray-600 mb-1">
-            <span>Hours logged</span>
+            <span className="group-hover:text-blue-600 transition-colors">Hours logged</span>
             <span className="font-medium">
               {Number(goal.week_hours_logged).toFixed(2)}h / {Number(goal.hours_per_week)}h
               <span className="text-gray-400 ml-1">({weekPct}%)</span>
             </span>
           </div>
           <ProgressBar value={Number(goal.week_hours_logged)} max={Number(goal.hours_per_week)} color="bg-blue-500" />
-        </div>
+        </Link>
 
-        <div>
+        <Link href={`${thisWeekFilter}&status=completed`} className="block group">
           <div className="flex justify-between text-xs text-gray-600 mb-1">
-            <span>Tasks completed</span>
+            <span className="group-hover:text-blue-600 transition-colors">Tasks completed</span>
             <span className="font-medium">
               {goal.week_tasks_done} / {goal.tasks_per_week}
               <span className="text-gray-400 ml-1">({taskPct}%)</span>
             </span>
           </div>
           <ProgressBar value={goal.week_tasks_done} max={goal.tasks_per_week} color="bg-purple-500" />
-        </div>
+        </Link>
       </div>
 
       {/* All time */}
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">All Time</p>
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
+        <Link href={allTasksFilter} className="bg-gray-50 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors">
           <p className="text-xl font-bold text-gray-900">{Number(goal.total_hours_logged).toFixed(1)}h</p>
           <p className="text-xs text-gray-500 mt-0.5">Hours logged</p>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
+        </Link>
+        <Link href={completedFilter} className="bg-gray-50 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors">
           <p className="text-xl font-bold text-gray-900">{goal.total_tasks_done}<span className="text-sm font-normal text-gray-400">/{goal.total_tasks}</span></p>
           <p className="text-xs text-gray-500 mt-0.5">Tasks done</p>
-        </div>
+        </Link>
       </div>
     </div>
   )
