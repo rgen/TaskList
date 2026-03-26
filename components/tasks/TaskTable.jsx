@@ -67,6 +67,7 @@ export default function TaskTable({ initialFilters = {} }) {
   const [archiveTarget, setArchiveTarget] = useState(null)
   const [gridEditMode, setGridEditMode] = useState(false)
   const [quickAddName, setQuickAddName] = useState('')
+  const quickAddRef = useRef(null)
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window === 'undefined') return 'traditional'
     return localStorage.getItem('task_view_mode') || 'traditional'
@@ -82,7 +83,10 @@ export default function TaskTable({ initialFilters = {} }) {
       name: quickAddName.trim(),
       category_id: quickCat?.id || null,
     }, {
-      onSuccess: () => setQuickAddName(''),
+      onSuccess: () => {
+        setQuickAddName('')
+        setTimeout(() => quickAddRef.current?.focus(), 0)
+      },
     })
   }
 
@@ -171,6 +175,7 @@ export default function TaskTable({ initialFilters = {} }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           <input
+            ref={quickAddRef}
             type="text"
             value={quickAddName}
             onChange={(e) => setQuickAddName(e.target.value)}
