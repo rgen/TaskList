@@ -144,14 +144,18 @@ export default function TaskFilters({ filters, onChange }) {
       </button>
 
       {/* Clear */}
-      {hasActiveFilters && (
-        <button
-          onClick={() => onChange({ sort: filters.sort, order: filters.order })}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          Clear filters
-        </button>
-      )}
+      <button
+        onClick={() => {
+          onChange({ sort: filters.sort, order: filters.order })
+          // Clear URL params if present
+          if (typeof window !== 'undefined' && window.location.search) {
+            window.history.replaceState({}, '', window.location.pathname)
+          }
+        }}
+        className={`text-sm ${hasActiveFilters ? 'text-red-600 font-medium hover:underline' : 'text-blue-600 hover:underline'}`}
+      >
+        Clear filters
+      </button>
     </div>
   )
 }
