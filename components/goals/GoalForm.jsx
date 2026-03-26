@@ -93,18 +93,6 @@ export default function GoalForm({ onSuccess }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Tasks per Week</label>
-          <input
-            type="number"
-            min="1"
-            max="21"
-            value={form.tasks_per_week}
-            onChange={e => set('tasks_per_week', e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Hours per Week</label>
           <input
             type="number"
@@ -114,6 +102,18 @@ export default function GoalForm({ onSuccess }) {
             onChange={e => set('hours_per_week', e.target.value)}
             required
             placeholder="e.g. 5"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Tasks per Week</label>
+          <input
+            type="number"
+            min="1"
+            max="21"
+            value={form.tasks_per_week}
+            onChange={e => set('tasks_per_week', e.target.value)}
+            required
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
