@@ -216,19 +216,12 @@ body {
 }
 
 [data-theme="dark"] .border-gray-50 {
+  --tw-border-opacity: 1 !important;
   border-color: #374151 !important;
 }
 
-[data-theme="dark"] .grid > div {
-  border-color: #4b5563 !important;
-}
-
-[data-theme="dark"] .grid.grid-cols-7 > div {
-  border-color: #4b5563 !important;
-}
-
-[data-theme="dark"] .border-r.border-gray-100,
-[data-theme="dark"] .border-b.border-gray-100 {
+[data-theme="dark"] .border-gray-100 {
+  --tw-border-opacity: 1 !important;
   border-color: #4b5563 !important;
 }
 
