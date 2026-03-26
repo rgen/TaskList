@@ -53,6 +53,7 @@ export async function POST(request) {
 
     return NextResponse.json(goal, { status: 201 })
   } catch (e) {
-    return NextResponse.json({ message: e.message }, { status: 500 })
+    console.error('Goal creation error:', e)
+    return NextResponse.json({ message: e.message, detail: e.stack?.split('\n')[1]?.trim() }, { status: 500 })
   }
 }
