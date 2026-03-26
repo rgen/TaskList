@@ -21,8 +21,8 @@ const THEMES = [
     description: 'Easy on the eyes with a sleek dark interface',
     preview: {
       sidebar: '#1f2937',
-      body: '#111827',
-      card: '#1f2937',
+      body: '#1f2937',
+      card: '#374151',
       accent: '#3b82f6',
       text: '#f9fafb',
     },
@@ -56,7 +56,7 @@ const THEMES = [
     name: 'Sunset Purple',
     description: 'Bold purple sidebar with warm violet accents',
     preview: {
-      sidebar: '#3b0764',
+      sidebar: '#7e22ce',
       body: '#faf5ff',
       card: '#ffffff',
       accent: '#9333ea',
@@ -68,7 +68,7 @@ const THEMES = [
     name: 'Rose Pink',
     description: 'Warm rose sidebar with soft pink tones',
     preview: {
-      sidebar: '#9f1239',
+      sidebar: '#e11d48',
       body: '#fff1f2',
       card: '#ffffff',
       accent: '#e11d48',
