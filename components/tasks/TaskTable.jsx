@@ -33,9 +33,22 @@ export default function TaskTable({ initialFilters = {} }) {
   const { data: categories = [] } = useCategories()
   const schoolWorkSet = useRef(false)
 
+  // When URL params change (e.g. clicking a chart or goal card), update filters
+  const initialFiltersKey = JSON.stringify(initialFilters)
+  useEffect(() => {
+    const hasSpecific = Object.keys(initialFilters).some(k => !['sort', 'order'].includes(k))
+    if (hasSpecific) {
+      setFilters({ ...BASE_FILTERS, ...initialFilters })
+      schoolWorkSet.current = true // Skip auto-default since we have explicit params
+    }
+  }, [initialFiltersKey])
+
   // Auto-default to School Work category on first ever load (no saved preference)
   useEffect(() => {
     if (schoolWorkSet.current) return
+    // Don't override if URL has specific filters
+    const hasSpecific = Object.keys(initialFilters).some(k => !['sort', 'order'].includes(k))
+    if (hasSpecific) { schoolWorkSet.current = true; return }
     if (filters.category_id) { schoolWorkSet.current = true; return }
     if (!categories.length) return
     const schoolWork = categories.find(c => c.name.toLowerCase() === 'school work')
@@ -46,14 +59,6 @@ export default function TaskTable({ initialFilters = {} }) {
     }
     schoolWorkSet.current = true
   }, [categories])
-
-  // When URL params change (e.g. clicking a chart), update filters
-  useEffect(() => {
-    const hasSpecific = Object.keys(initialFilters).some(k => !['sort', 'order'].includes(k))
-    if (hasSpecific) {
-      setFilters({ ...BASE_FILTERS, ...initialFilters })
-    }
-  }, [JSON.stringify(initialFilters)])
 
   // Persist filters to localStorage whenever they change
   useEffect(() => {
