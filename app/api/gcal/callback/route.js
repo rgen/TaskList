@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyState, getTokensFromCode, saveTokens, ensureGcalTable } from '@/lib/gcal'
+import { ensureGmailLabel } from '@/lib/gmail'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -21,6 +22,16 @@ export async function GET(request) {
     const { userId, returnTo } = await verifyState(state)
     const tokens = await getTokensFromCode(code)
     await saveTokens(userId, tokens, scope)
+
+    // If connecting Gmail, create the label and enable Gmail import
+    if (returnTo === 'gmail') {
+      try {
+        await ensureGmailLabel(userId)
+      } catch (e) {
+        // Label creation failed but connection is still saved
+        console.error('Failed to create Gmail label:', e.message)
+      }
+    }
 
     const redirectPath = returnTo === 'gmail'
       ? '/customization/gmail?connected=true'
