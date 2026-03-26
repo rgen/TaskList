@@ -1,6 +1,7 @@
 'use client'
 import { useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
+import clsx from 'clsx'
 import { useTasks, useUpdateTask } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import TaskModal from './TaskModal'
@@ -11,6 +12,12 @@ const PRIORITY_COLORS = {
   medium: '#f59e0b',
   low: '#22c55e',
 }
+
+const PRIORITY_LABELS = [
+  { key: 'high', label: 'High' },
+  { key: 'medium', label: 'Medium' },
+  { key: 'low', label: 'Low' },
+]
 
 const PALETTE = [
   '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
@@ -31,6 +38,10 @@ export default function TaskScheduleView() {
   const [editTaskId, setEditTaskId] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [dropTarget, setDropTarget] = useState(null)
+  const [colorBy, setColorBy] = useState(() => {
+    if (typeof window === 'undefined') return 'priority'
+    return localStorage.getItem('schedule_color_by') || 'priority'
+  })
 
   const categoryColors = useMemo(() => {
     const map = {}
@@ -39,8 +50,11 @@ export default function TaskScheduleView() {
   }, [categories])
 
   const getColor = useCallback((task) => {
-    return PRIORITY_COLORS[task.priority] || '#6b7280'
-  }, [])
+    if (colorBy === 'priority') return PRIORITY_COLORS[task.priority] || '#6b7280'
+    return task.category_id ? (categoryColors[task.category_id] || '#6b7280') : '#6b7280'
+  }, [colorBy, categoryColors])
+
+  const usedCategories = categories.filter(c => tasks.some(t => t.category_id === c.id))
 
   function openTask(id) {
     setEditTaskId(id)
@@ -89,6 +103,30 @@ export default function TaskScheduleView() {
   return (
     <div>
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* Color-by toggle */}
+        <div className="flex items-center justify-end px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => { setColorBy('category'); localStorage.setItem('schedule_color_by', 'category') }}
+              className={clsx(
+                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                colorBy === 'category' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              Category
+            </button>
+            <button
+              onClick={() => { setColorBy('priority'); localStorage.setItem('schedule_color_by', 'priority') }}
+              className={clsx(
+                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                colorBy === 'priority' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              Priority
+            </button>
+          </div>
+        </div>
+
         <ScheduleView
           tasks={tasks}
           getColor={getColor}
@@ -101,7 +139,42 @@ export default function TaskScheduleView() {
           handleDragStart={handleDragStart}
           handleDragEnd={handleDragEnd}
         />
+
+        {/* Legend */}
+        <div className="flex items-center flex-wrap gap-3 px-6 py-3 border-t border-gray-100 bg-gray-50">
+          {colorBy === 'category' ? (
+            <>
+              <span className="text-xs text-gray-500 font-medium">Category:</span>
+              {usedCategories.length === 0 && (
+                <span className="text-xs text-gray-400">No categories assigned</span>
+              )}
+              {usedCategories.map((cat) => (
+                <span key={cat.id} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: categoryColors[cat.id] }} />
+                  {cat.name}
+                </span>
+              ))}
+              {tasks.some(t => !t.category_id) && (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                  <span className="inline-block w-3 h-3 rounded-full bg-gray-400 shrink-0" />
+                  Uncategorized
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-gray-500 font-medium">Priority:</span>
+              {PRIORITY_LABELS.map(({ key, label }) => (
+                <span key={key} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: PRIORITY_COLORS[key] }} />
+                  {label}
+                </span>
+              ))}
+            </>
+          )}
+        </div>
       </div>
+
       <TaskModal
         isOpen={modalOpen}
         taskId={editTaskId}
