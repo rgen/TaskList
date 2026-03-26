@@ -1,10 +1,13 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import clsx from 'clsx'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useUpdateTask } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import { useStatuses } from '@/hooks/useStatuses'
-import { useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask } from '@/hooks/useSubtasks'
+import { useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask, useReorderSubtasks } from '@/hooks/useSubtasks'
 
 function NotesModal({ notes, onSave, onClose }) {
   const [value, setValue] = useState(notes || '')
@@ -43,19 +46,92 @@ function NotesModal({ notes, onSave, onClose }) {
   )
 }
 
+function SortableSubtaskItem({ subtask, editingId, editValue, setEditValue, editRef, onEditStart, onEditSave, onToggle, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: subtask.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center gap-2 group">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 shrink-0 touch-none"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 6a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4zM8 14a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4zM8 22a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4z" />
+        </svg>
+      </button>
+      <input
+        type="checkbox"
+        checked={subtask.completed}
+        onChange={() => onToggle(subtask)}
+        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
+      />
+      {editingId === subtask.id ? (
+        <input
+          ref={editRef}
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={() => onEditSave(subtask)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); onEditSave(subtask) }
+            if (e.key === 'Escape') onEditStart(null)
+          }}
+          className="flex-1 text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      ) : (
+        <span
+          className={clsx('flex-1 text-sm cursor-pointer hover:text-blue-600', subtask.completed ? 'line-through text-gray-400' : 'text-gray-700')}
+          onClick={() => { onEditStart(subtask.id); setEditValue(subtask.name) }}
+        >
+          {subtask.name}
+        </span>
+      )}
+      <button
+        onClick={() => onDelete(subtask.id)}
+        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity shrink-0"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </li>
+  )
+}
+
 function SubtasksModal({ taskId, onClose }) {
   const { data: subtasks = [], isLoading } = useSubtasks(taskId)
   const createMutation = useCreateSubtask(taskId)
   const updateMutation = useUpdateSubtask(taskId)
   const deleteMutation = useDeleteSubtask(taskId)
+  const reorderMutation = useReorderSubtasks(taskId)
+  const [items, setItems] = useState([])
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
   const editRef = useRef(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  // Sync items with fetched subtasks
+  useEffect(() => {
+    setItems(subtasks)
+  }, [subtasks])
 
   useEffect(() => {
     if (editingId && editRef.current) editRef.current.focus()
   }, [editingId])
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = items.findIndex((s) => s.id === active.id)
+    const newIndex = items.findIndex((s) => s.id === over.id)
+    const reordered = arrayMove(items, oldIndex, newIndex)
+    setItems(reordered)
+    reorderMutation.mutate(reordered.map((s) => s.id))
+  }
 
   function handleAdd() {
     if (!newName.trim()) return
@@ -85,50 +161,29 @@ function SubtasksModal({ taskId, onClose }) {
           {isLoading ? (
             <p className="text-sm text-gray-400 text-center py-4">Loading…</p>
           ) : (
-            <ul className="space-y-2 mb-4 max-h-[350px] overflow-y-auto">
-              {subtasks.map((sub) => (
-                <li key={sub.id} className="flex items-center gap-2 group">
-                  <input
-                    type="checkbox"
-                    checked={sub.completed}
-                    onChange={() => updateMutation.mutate({ id: sub.id, data: { completed: !sub.completed } })}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
-                  />
-                  {editingId === sub.id ? (
-                    <input
-                      ref={editRef}
-                      type="text"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onBlur={() => handleEditSave(sub)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); handleEditSave(sub) }
-                        if (e.key === 'Escape') setEditingId(null)
-                      }}
-                      className="flex-1 text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                <ul className="space-y-2 mb-4 max-h-[350px] overflow-y-auto">
+                  {items.map((sub) => (
+                    <SortableSubtaskItem
+                      key={sub.id}
+                      subtask={sub}
+                      editingId={editingId}
+                      editValue={editValue}
+                      setEditValue={setEditValue}
+                      editRef={editRef}
+                      onEditStart={setEditingId}
+                      onEditSave={handleEditSave}
+                      onToggle={(s) => updateMutation.mutate({ id: s.id, data: { completed: !s.completed } })}
+                      onDelete={(id) => deleteMutation.mutate(id)}
                     />
-                  ) : (
-                    <span
-                      className={clsx('flex-1 text-sm cursor-pointer hover:text-blue-600', sub.completed ? 'line-through text-gray-400' : 'text-gray-700')}
-                      onClick={() => { setEditingId(sub.id); setEditValue(sub.name) }}
-                    >
-                      {sub.name}
-                    </span>
+                  ))}
+                  {items.length === 0 && (
+                    <li className="text-sm text-gray-400 italic text-center py-2">No subtasks yet</li>
                   )}
-                  <button
-                    onClick={() => deleteMutation.mutate(sub.id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity shrink-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-              {subtasks.length === 0 && (
-                <li className="text-sm text-gray-400 italic text-center py-2">No subtasks yet</li>
-              )}
-            </ul>
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
           <div className="flex gap-2">
             <input
