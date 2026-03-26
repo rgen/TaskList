@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useGoalProgress } from '@/hooks/useGoals'
-import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns'
+import { format, parseISO, startOfWeek } from 'date-fns'
 
 function formatDate(d) {
   try {
@@ -23,6 +23,12 @@ function ProgressBar({ value, max, color = 'bg-blue-500' }) {
   )
 }
 
+function buildUrl(params) {
+  const filtered = Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== '')
+  if (!filtered.length) return '/tasks'
+  return '/tasks?' + filtered.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+}
+
 function GoalCard({ goal }) {
   const weekPct = goal.hours_per_week > 0
     ? Math.min(100, Math.round((Number(goal.week_hours_logged) / Number(goal.hours_per_week)) * 100))
@@ -33,27 +39,50 @@ function GoalCard({ goal }) {
 
   const isActive = new Date(goal.start_date) <= new Date() && new Date(goal.end_date) >= new Date()
 
-  // Build filter URLs
-  const catFilter = goal.category_id ? `category_id=${goal.category_id}` : ''
-  const subFilter = goal.subcategory_id ? `&subcategory_id=${goal.subcategory_id}` : ''
-  const baseFilter = `/tasks?${catFilter}${subFilter}`
-
   const now = new Date()
   const ws = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
-  const thisWeekFilter = `${baseFilter}&week_start=${ws}`
 
-  const completedFilter = `${baseFilter}&status=completed`
-  const allTasksFilter = baseFilter
+  // All tasks for this goal
+  const allGoalTasks = buildUrl({
+    goal_id: goal.id,
+    category_id: goal.category_id,
+    subcategory_id: goal.subcategory_id,
+  })
+
+  // This week's tasks for this goal
+  const thisWeekTasks = buildUrl({
+    goal_id: goal.id,
+    category_id: goal.category_id,
+    subcategory_id: goal.subcategory_id,
+    week_start: ws,
+  })
+
+  // This week's completed tasks for this goal
+  const thisWeekCompleted = buildUrl({
+    goal_id: goal.id,
+    category_id: goal.category_id,
+    subcategory_id: goal.subcategory_id,
+    week_start: ws,
+    status: 'completed',
+  })
+
+  // All completed tasks for this goal
+  const allCompleted = buildUrl({
+    goal_id: goal.id,
+    category_id: goal.category_id,
+    subcategory_id: goal.subcategory_id,
+    status: 'completed',
+  })
 
   return (
     <div className={`bg-white rounded-xl border p-5 ${isActive ? 'border-blue-200' : 'border-gray-200 opacity-70'}`}>
       <div className="flex items-start justify-between gap-2 mb-1">
         <div>
-          <Link href={allTasksFilter} className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition-colors">
+          <Link href={allGoalTasks} className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition-colors">
             {goal.name}
           </Link>
           <p className="text-xs">
-            <Link href={allTasksFilter} className="text-gray-500 hover:text-blue-600 transition-colors">
+            <Link href={allGoalTasks} className="text-gray-500 hover:text-blue-600 transition-colors">
               {goal.category_name}{goal.subcategory_name ? ` › ${goal.subcategory_name}` : ''}
             </Link>
           </p>
@@ -71,7 +100,7 @@ function GoalCard({ goal }) {
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">This Week</p>
 
       <div className="space-y-3 mb-4">
-        <Link href={thisWeekFilter} className="block group">
+        <Link href={thisWeekTasks} className="block group">
           <div className="flex justify-between text-xs text-gray-600 mb-1">
             <span className="group-hover:text-blue-600 transition-colors">Hours logged</span>
             <span className="font-medium">
@@ -82,7 +111,7 @@ function GoalCard({ goal }) {
           <ProgressBar value={Number(goal.week_hours_logged)} max={Number(goal.hours_per_week)} color="bg-blue-500" />
         </Link>
 
-        <Link href={`${thisWeekFilter}&status=completed`} className="block group">
+        <Link href={thisWeekCompleted} className="block group">
           <div className="flex justify-between text-xs text-gray-600 mb-1">
             <span className="group-hover:text-blue-600 transition-colors">Tasks completed</span>
             <span className="font-medium">
@@ -97,11 +126,11 @@ function GoalCard({ goal }) {
       {/* All time */}
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">All Time</p>
       <div className="grid grid-cols-2 gap-3">
-        <Link href={allTasksFilter} className="bg-gray-50 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors">
+        <Link href={allGoalTasks} className="bg-gray-50 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors">
           <p className="text-xl font-bold text-gray-900">{Number(goal.total_hours_logged).toFixed(1)}h</p>
           <p className="text-xs text-gray-500 mt-0.5">Hours logged</p>
         </Link>
-        <Link href={completedFilter} className="bg-gray-50 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors">
+        <Link href={allCompleted} className="bg-gray-50 rounded-lg p-3 text-center hover:bg-blue-50 transition-colors">
           <p className="text-xl font-bold text-gray-900">{goal.total_tasks_done}<span className="text-sm font-normal text-gray-400">/{goal.total_tasks}</span></p>
           <p className="text-xs text-gray-500 mt-0.5">Tasks done</p>
         </Link>

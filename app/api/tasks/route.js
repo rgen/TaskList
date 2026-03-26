@@ -43,6 +43,8 @@ export async function GET(request) {
     if (due_date_from) { conditions.push(`t.due_date::date >= $${values.length + 1}::date`); values.push(due_date_from) }
     if (overdue === 'true') { conditions.push(`t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed'`) }
     if (hideGoalTasks) { conditions.push(`t.goal_id IS NULL`) }
+    const goal_id = searchParams.get('goal_id')
+    if (goal_id) { conditions.push(`t.goal_id = $${values.length + 1}`); values.push(Number(goal_id)) }
 
     conditions.push(`t.user_id = $${values.length + 1}`)
     values.push(Number(user.id))
