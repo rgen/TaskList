@@ -3,11 +3,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useTasks } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import TaskRow from './TaskRow'
+import SlimTaskRow from './SlimTaskRow'
 import GridEditRow from './GridEditRow'
 import TaskModal from './TaskModal'
 import TaskFilters from './TaskFilters'
 import DeleteConfirm from './DeleteConfirm'
 import ArchiveConfirm from './ArchiveConfirm'
+import { useCreateTask } from '@/hooks/useTasks'
 
 const STORAGE_KEY = 'task_filters'
 const BASE_FILTERS = { sort: 'created_at', order: 'desc' }
@@ -64,8 +66,31 @@ export default function TaskTable({ initialFilters = {} }) {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [archiveTarget, setArchiveTarget] = useState(null)
   const [gridEditMode, setGridEditMode] = useState(false)
+  const [quickAddName, setQuickAddName] = useState('')
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window === 'undefined') return 'traditional'
+    return localStorage.getItem('task_view_mode') || 'traditional'
+  })
 
   const { data: tasks = [], isLoading, isError, error } = useTasks(filters)
+  const createTask = useCreateTask()
+
+  function handleQuickAdd() {
+    if (!quickAddName.trim()) return
+    createTask.mutate({ name: quickAddName.trim() }, {
+      onSuccess: () => setQuickAddName(''),
+    })
+  }
+
+  function handleQuickAddKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleQuickAdd() }
+  }
+
+  function toggleViewMode() {
+    const next = viewMode === 'traditional' ? 'slim' : 'traditional'
+    setViewMode(next)
+    localStorage.setItem('task_view_mode', next)
+  }
 
   function openCreate() {
     setEditTaskId(null)
@@ -88,20 +113,43 @@ export default function TaskTable({ initialFilters = {} }) {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <TaskFilters filters={filters} onChange={setFilters} />
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setGridEditMode((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
-              gridEditMode
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M3 10h18M3 6h18M3 14h18M3 18h18" />
-            </svg>
-            {gridEditMode ? 'Done Editing' : 'Grid Edit'}
-          </button>
+          {/* View toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => { setViewMode('traditional'); localStorage.setItem('task_view_mode', 'traditional') }}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'traditional' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Traditional view"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <button
+              onClick={() => { setViewMode('slim'); localStorage.setItem('task_view_mode', 'slim') }}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'slim' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Slim view"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          {viewMode === 'traditional' && (
+            <button
+              onClick={() => setGridEditMode((v) => !v)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
+                gridEditMode
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+              </svg>
+              {gridEditMode ? 'Done Editing' : 'Grid Edit'}
+            </button>
+          )}
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -111,6 +159,30 @@ export default function TaskTable({ initialFilters = {} }) {
             </svg>
             New Task
           </button>
+        </div>
+      </div>
+
+      {/* Quick Add */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <input
+            type="text"
+            value={quickAddName}
+            onChange={(e) => setQuickAddName(e.target.value)}
+            onKeyDown={handleQuickAddKeyDown}
+            placeholder="Type a task name and press Enter to add…"
+            className="flex-1 text-sm bg-transparent outline-none placeholder-gray-400"
+            disabled={createTask.isPending}
+          />
+          {createTask.isPending && (
+            <svg className="w-4 h-4 text-blue-500 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          )}
         </div>
       </div>
 
@@ -137,55 +209,64 @@ export default function TaskTable({ initialFilters = {} }) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-          <table className="w-full bg-white">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="pl-4 pr-2 py-3 w-10" />
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Task
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Due Date
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Duration
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Subcategory
-                </th>
-                <th className="pl-3 pr-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task) => gridEditMode ? (
-                <GridEditRow
-                  key={task.id}
-                  task={task}
-                  onDelete={setDeleteTarget}
-                  onArchive={setArchiveTarget}
-                />
-              ) : (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onEdit={openEdit}
-                  onDelete={setDeleteTarget}
-                  onArchive={setArchiveTarget}
-                />
-              ))}
-            </tbody>
-          </table>
+          {viewMode === 'slim' ? (
+            <table className="w-full bg-white">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="pl-4 pr-2 py-2 w-8" />
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Task</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Due</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="pl-3 pr-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((task) => (
+                  <SlimTaskRow
+                    key={task.id}
+                    task={task}
+                    onEdit={openEdit}
+                    onDelete={setDeleteTarget}
+                  />
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full bg-white">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="pl-4 pr-2 py-3 w-10" />
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Task</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Due Date</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subcategory</th>
+                  <th className="pl-3 pr-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((task) => gridEditMode ? (
+                  <GridEditRow
+                    key={task.id}
+                    task={task}
+                    onDelete={setDeleteTarget}
+                    onArchive={setArchiveTarget}
+                  />
+                ) : (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onEdit={openEdit}
+                    onDelete={setDeleteTarget}
+                    onArchive={setArchiveTarget}
+                  />
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
