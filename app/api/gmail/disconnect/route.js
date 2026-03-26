@@ -13,6 +13,7 @@ export async function POST(request) {
       UPDATE google_calendar_connections SET
         gmail_enabled = FALSE,
         gmail_label_id = NULL,
+        granted_scopes = REPLACE(COALESCE(granted_scopes, ''), 'gmail', ''),
         updated_at = NOW()
       WHERE user_id = ${userId}`
 

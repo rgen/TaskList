@@ -26,7 +26,7 @@ function GmailContent() {
 
   // Auto-import polling
   useEffect(() => {
-    if (!autoImport || !status?.hasGmailScope || !status?.enabled) return
+    if (!autoImport || !status?.hasGmailScope) return
 
     // Import immediately on enable
     importMutation.mutate(undefined, {
@@ -46,7 +46,7 @@ function GmailContent() {
     }, 5 * 60 * 1000) // 5 minutes
 
     return () => clearInterval(interval)
-  }, [autoImport, status?.hasGmailScope, status?.enabled])
+  }, [autoImport, status?.hasGmailScope])
 
   function toggleAutoImport() {
     const next = !autoImport
@@ -89,7 +89,7 @@ function GmailContent() {
     })
   }
 
-  const isGmailActive = status?.hasGmailScope && status?.enabled
+  const isGmailActive = status?.hasGmailScope
 
   return (
     <>
