@@ -119,6 +119,27 @@
   --bg-hover: #f3e8ff;
 }
 
+/* Theme: Rose Pink */
+[data-theme="rose"] {
+  --bg-body: #fff1f2;
+  --bg-sidebar: #9f1239;
+  --border-sidebar: #be123c;
+  --text-sidebar: #fecdd3;
+  --text-sidebar-active: #fda4af;
+  --bg-sidebar-active: #be123c;
+  --bg-card: #ffffff;
+  --border-card: #fecdd3;
+  --text-primary: #881337;
+  --text-secondary: #be123c;
+  --text-muted: #fda4af;
+  --bg-input: #ffffff;
+  --border-input: #fda4af;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --bg-table-header: #fff1f2;
+  --bg-hover: #ffe4e6;
+}
+
 /* Apply theme variables */
 body {
   background-color: var(--bg-body, #f9fafb);

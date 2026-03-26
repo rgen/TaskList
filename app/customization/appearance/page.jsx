@@ -63,6 +63,18 @@ const THEMES = [
       text: '#3b0764',
     },
   },
+  {
+    id: 'rose',
+    name: 'Rose Pink',
+    description: 'Warm rose sidebar with soft pink tones',
+    preview: {
+      sidebar: '#9f1239',
+      body: '#fff1f2',
+      card: '#ffffff',
+      accent: '#e11d48',
+      text: '#881337',
+    },
+  },
 ]
 
 function ThemeCard({ theme, isActive, onSelect }) {
