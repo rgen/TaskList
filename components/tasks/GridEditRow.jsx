@@ -5,6 +5,46 @@ import { useUpdateTask } from '@/hooks/useTasks'
 import { useCategories } from '@/hooks/useCategories'
 import { useStatuses } from '@/hooks/useStatuses'
 
+function NotesModal({ notes, onSave, onClose }) {
+  const [value, setValue] = useState(notes || '')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Edit Notes</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-5">
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={12}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[200px]"
+            placeholder="Add notes…"
+            autoFocus
+          />
+        </div>
+        <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(value)}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Save Notes
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function GridEditRow({ task, onDelete, onArchive }) {
   const updateMutation = useUpdateTask()
   const { data: categories = [] } = useCategories()
@@ -12,6 +52,7 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
 
   const [fields, setFields] = useState({
     name: task.name || '',
+    notes: task.notes || '',
     priority: task.priority || 'medium',
     status: task.status || 'pending',
     due_date: task.due_date || '',
@@ -20,6 +61,7 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [notesModalOpen, setNotesModalOpen] = useState(false)
 
   const selectedCategory = categories.find((c) => String(c.id) === fields.category_id)
   const subcategories = selectedCategory?.subcategories || []
@@ -29,6 +71,7 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
     const due = f.due_date || null
     return {
       name: f.name || task.name,
+      notes: f.notes || null,
       priority: f.priority,
       status: f.status,
       due_date: due,
@@ -38,7 +81,6 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
       category_id: f.category_id ? Number(f.category_id) : null,
       subcategory_id: f.subcategory_id ? Number(f.subcategory_id) : null,
       source: task.source || null,
-      notes: task.notes || null,
     }
   }
 
@@ -66,6 +108,12 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
     save({ [key]: fields[key] })
   }
 
+  function handleNotesSave(newNotes) {
+    setFields((f) => ({ ...f, notes: newNotes }))
+    save({ ...fields, notes: newNotes })
+    setNotesModalOpen(false)
+  }
+
   const inputCls = 'w-full text-sm border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent'
   const selectCls = 'text-sm border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-full'
 
@@ -79,8 +127,9 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
     : '—'
 
   return (
+    <>
     <tr className={clsx('border-b border-gray-100 transition-colors', saving ? 'bg-blue-50' : 'bg-yellow-50/40')}>
-      {/* Checkbox placeholder */}
+      {/* Saved indicator */}
       <td className="pl-4 pr-2 py-2 w-10">
         {saved && (
           <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,8 +138,8 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         )}
       </td>
 
-      {/* Name */}
-      <td className="px-3 py-2 min-w-[160px]">
+      {/* Name — wide */}
+      <td className="px-3 py-2" style={{ minWidth: '320px' }}>
         <input
           type="text"
           value={fields.name}
@@ -100,8 +149,19 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         />
       </td>
 
-      {/* Priority */}
-      <td className="px-3 py-2 whitespace-nowrap">
+      {/* Notes — narrow, clickable link */}
+      <td className="px-3 py-2 whitespace-nowrap" style={{ width: '80px' }}>
+        <button
+          type="button"
+          onClick={() => setNotesModalOpen(true)}
+          className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline"
+        >
+          {fields.notes ? 'View' : 'Add'}
+        </button>
+      </td>
+
+      {/* Priority — wider */}
+      <td className="px-3 py-2 whitespace-nowrap" style={{ minWidth: '110px' }}>
         <select value={fields.priority} onChange={(e) => handleChange('priority', e.target.value)} className={selectCls}>
           <option value="high">High</option>
           <option value="medium">Medium</option>
@@ -109,13 +169,13 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         </select>
       </td>
 
-      {/* Due Date */}
-      <td className="px-3 py-2 whitespace-nowrap">
+      {/* Due Date — narrower */}
+      <td className="px-3 py-2 whitespace-nowrap" style={{ width: '130px' }}>
         <input
           type="date"
           value={fields.due_date}
           onChange={(e) => handleChange('due_date', e.target.value)}
-          className={inputCls}
+          className={clsx(inputCls, 'text-xs')}
         />
       </td>
 
@@ -131,7 +191,7 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         </select>
       </td>
 
-      {/* Duration (read-only, computed) */}
+      {/* Duration (read-only) */}
       <td className="px-3 py-2 whitespace-nowrap">
         <span className="text-sm text-gray-500">{duration}</span>
       </td>
@@ -164,7 +224,6 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         )}
       </td>
 
-
       {/* Actions */}
       <td className="pl-3 pr-4 py-2 whitespace-nowrap">
         <div className="flex items-center gap-1">
@@ -194,5 +253,14 @@ export default function GridEditRow({ task, onDelete, onArchive }) {
         </div>
       </td>
     </tr>
+
+    {notesModalOpen && (
+      <NotesModal
+        notes={fields.notes}
+        onSave={handleNotesSave}
+        onClose={() => setNotesModalOpen(false)}
+      />
+    )}
+    </>
   )
 }

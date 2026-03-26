@@ -211,7 +211,34 @@ export default function TaskTable({ initialFilters = {} }) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-          {viewMode === 'slim' ? (
+          {gridEditMode ? (
+            <table className="w-full bg-white">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="pl-4 pr-2 py-2 w-10" />
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ minWidth: '320px' }}>Task</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '80px' }}>Notes</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ minWidth: '110px' }}>Priority</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '130px' }}>Due Date</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subcategory</th>
+                  <th className="pl-3 pr-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((task) => (
+                  <GridEditRow
+                    key={task.id}
+                    task={task}
+                    onDelete={setDeleteTarget}
+                    onArchive={setArchiveTarget}
+                  />
+                ))}
+              </tbody>
+            </table>
+          ) : viewMode === 'slim' ? (
             <table className="w-full bg-white">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -226,14 +253,7 @@ export default function TaskTable({ initialFilters = {} }) {
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task) => gridEditMode ? (
-                  <GridEditRow
-                    key={task.id}
-                    task={task}
-                    onDelete={setDeleteTarget}
-                    onArchive={setArchiveTarget}
-                  />
-                ) : (
+                {tasks.map((task) => (
                   <SlimTaskRow
                     key={task.id}
                     task={task}
@@ -259,14 +279,7 @@ export default function TaskTable({ initialFilters = {} }) {
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task) => gridEditMode ? (
-                  <GridEditRow
-                    key={task.id}
-                    task={task}
-                    onDelete={setDeleteTarget}
-                    onArchive={setArchiveTarget}
-                  />
-                ) : (
+                {tasks.map((task) => (
                   <TaskRow
                     key={task.id}
                     task={task}
