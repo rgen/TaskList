@@ -7,10 +7,19 @@ export async function GET(request) {
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
   try {
+    const userId = Number(user.id)
+
+    // Auto-create "Quick Tasks" category for users who don't have it
+    const { rows: quickCheck } = await sql`
+      SELECT id FROM categories WHERE user_id = ${userId} AND LOWER(name) = 'quick tasks'`
+    if (quickCheck.length === 0) {
+      await sql`INSERT INTO categories (user_id, name, position) VALUES (${userId}, 'Quick Tasks', 0)`
+    }
+
     const { rows: categories } = await sql`
-      SELECT * FROM categories WHERE user_id = ${Number(user.id)} ORDER BY position, id`
+      SELECT * FROM categories WHERE user_id = ${userId} ORDER BY position, id`
     const { rows: subcategories } = await sql`
-      SELECT * FROM subcategories WHERE user_id = ${Number(user.id)} ORDER BY position, id`
+      SELECT * FROM subcategories WHERE user_id = ${userId} ORDER BY position, id`
 
     const result = categories.map((cat) => ({
       ...cat,
