@@ -79,14 +79,10 @@ export default function TaskTable({ initialFilters = {} }) {
   function handleQuickAdd() {
     if (!quickAddName.trim()) return
     const quickCat = categories.find(c => c.name.toLowerCase() === 'quick tasks')
+    setQuickAddName('')
     createTask.mutate({
       name: quickAddName.trim(),
       category_id: quickCat?.id || null,
-    }, {
-      onSuccess: () => {
-        setQuickAddName('')
-        setTimeout(() => quickAddRef.current?.focus(), 0)
-      },
     })
   }
 
@@ -182,7 +178,6 @@ export default function TaskTable({ initialFilters = {} }) {
             onKeyDown={handleQuickAddKeyDown}
             placeholder="Type a task name and press Enter to add…"
             className="flex-1 text-sm bg-transparent outline-none placeholder-gray-400"
-            disabled={createTask.isPending}
           />
           {createTask.isPending && (
             <svg className="w-4 h-4 text-blue-500 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
