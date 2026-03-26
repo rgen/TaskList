@@ -26,6 +26,18 @@ export async function GET(request) {
       ORDER BY week_start DESC, c.name
     `
 
+    // Get weekly goals with their category and hours target
+    const { rows: goalRows } = await sql`
+      SELECT
+        g.id, g.name, g.hours_per_week,
+        g.start_date, g.end_date,
+        COALESCE(c.name, 'Uncategorized') AS category_name,
+        c.id AS category_id
+      FROM weekly_goals g
+      LEFT JOIN categories c ON g.category_id = c.id
+      WHERE g.user_id = ${userId}
+    `
+
     // Get unique categories and weeks
     const categorySet = new Map()
     const weekSet = new Set()
@@ -38,33 +50,78 @@ export async function GET(request) {
     const categories = Array.from(categorySet.entries()).map(([name, id]) => ({ name, id }))
     const weeks = Array.from(weekSet).sort((a, b) => new Date(a) - new Date(b))
 
+    // For each week and category, find the applicable goal target
+    function getGoalTarget(weekStart, categoryName) {
+      const weekDate = new Date(weekStart)
+      const matchingGoals = goalRows.filter((g) =>
+        g.category_name === categoryName &&
+        new Date(g.start_date) <= weekDate &&
+        new Date(g.end_date) >= weekDate
+      )
+      if (!matchingGoals.length) return null
+      return matchingGoals.reduce((sum, g) => sum + Number(g.hours_per_week), 0)
+    }
+
     // Build week rows
     const weekRows = weeks.map((week) => {
       const row = { week_start: week, categories: {} }
-      let total = 0
+      let totalLogged = 0
+      let totalGoal = 0
+      let hasGoal = false
+
       categories.forEach((cat) => {
         const match = rows.find(
           (r) => r.week_start === week && r.category_name === cat.name
         )
         const hours = match ? Number(match.total_hours) : 0
-        row.categories[cat.name] = hours
-        total += hours
+        const goal = getGoalTarget(week, cat.name)
+
+        row.categories[cat.name] = {
+          logged: hours,
+          goal: goal,
+          pct: goal ? Math.round((hours / goal) * 100) : null,
+        }
+        totalLogged += hours
+        if (goal) { totalGoal += goal; hasGoal = true }
       })
-      row.total = total
+
+      row.totalLogged = totalLogged
+      row.totalGoal = hasGoal ? totalGoal : null
+      row.totalPct = hasGoal && totalGoal > 0 ? Math.round((totalLogged / totalGoal) * 100) : null
       return row
     })
 
     // Totals row
     const totals = { categories: {} }
-    let grandTotal = 0
+    let grandLogged = 0
+    let grandGoal = 0
+    let hasAnyGoal = false
+
     categories.forEach((cat) => {
-      const sum = rows
+      const sumLogged = rows
         .filter((r) => r.category_name === cat.name)
         .reduce((acc, r) => acc + Number(r.total_hours), 0)
-      totals.categories[cat.name] = sum
-      grandTotal += sum
+
+      // Sum goals across all weeks for this category
+      let sumGoal = 0
+      let catHasGoal = false
+      weeks.forEach((week) => {
+        const g = getGoalTarget(week, cat.name)
+        if (g) { sumGoal += g; catHasGoal = true }
+      })
+
+      totals.categories[cat.name] = {
+        logged: sumLogged,
+        goal: catHasGoal ? sumGoal : null,
+        pct: catHasGoal && sumGoal > 0 ? Math.round((sumLogged / sumGoal) * 100) : null,
+      }
+      grandLogged += sumLogged
+      if (catHasGoal) { grandGoal += sumGoal; hasAnyGoal = true }
     })
-    totals.total = grandTotal
+
+    totals.totalLogged = grandLogged
+    totals.totalGoal = hasAnyGoal ? grandGoal : null
+    totals.totalPct = hasAnyGoal && grandGoal > 0 ? Math.round((grandLogged / grandGoal) * 100) : null
 
     return NextResponse.json({
       categories,

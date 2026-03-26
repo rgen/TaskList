@@ -1,6 +1,7 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
+import clsx from 'clsx'
 
 function formatWeek(dateStr) {
   try {
@@ -9,6 +10,40 @@ function formatWeek(dateStr) {
   } catch {
     return String(dateStr)
   }
+}
+
+function PctBadge({ pct }) {
+  if (pct === null || pct === undefined) return null
+  return (
+    <span className={clsx(
+      'text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1',
+      pct >= 100 ? 'bg-green-100 text-green-700' :
+      pct >= 75 ? 'bg-blue-100 text-blue-700' :
+      pct >= 50 ? 'bg-yellow-100 text-yellow-700' :
+      'bg-red-100 text-red-700'
+    )}>
+      {pct}%
+    </span>
+  )
+}
+
+function HoursCell({ logged, goal, pct }) {
+  const hasValue = logged > 0
+  return (
+    <td className="px-4 py-2.5 text-right whitespace-nowrap" style={{ color: hasValue ? 'var(--text-primary, #111827)' : 'var(--text-muted, #d1d5db)' }}>
+      {hasValue ? (
+        <span className="tabular-nums">
+          {logged.toFixed(2)}
+          {goal !== null && (
+            <span className="text-xs" style={{ color: 'var(--text-secondary, #6b7280)' }}>
+              /{goal.toFixed(0)}h
+            </span>
+          )}
+          <PctBadge pct={pct} />
+        </span>
+      ) : '-'}
+    </td>
+  )
 }
 
 export default function WeeklyHoursReport() {
@@ -38,7 +73,6 @@ export default function WeeklyHoursReport() {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        {/* Category headers */}
         <thead>
           <tr style={{ backgroundColor: 'var(--bg-table-header, #f9fafb)' }}>
             <th
@@ -79,37 +113,62 @@ export default function WeeklyHoursReport() {
                 {formatWeek(week.week_start)}
               </td>
               {categories.map((cat) => {
-                const hours = week.categories[cat.name] || 0
+                const cell = week.categories[cat.name] || { logged: 0, goal: null, pct: null }
                 return (
-                  <td
+                  <HoursCell
                     key={cat.name}
-                    className="px-4 py-2.5 text-right tabular-nums"
-                    style={{ color: hours > 0 ? 'var(--text-primary, #111827)' : 'var(--text-muted, #d1d5db)' }}
-                  >
-                    {hours > 0 ? hours.toFixed(2) : '-'}
-                  </td>
+                    logged={cell.logged}
+                    goal={cell.goal}
+                    pct={cell.pct}
+                  />
                 )
               })}
-              <td className="px-4 py-2.5 text-right font-semibold tabular-nums" style={{ color: 'var(--text-primary, #111827)' }}>
-                {week.total.toFixed(2)}
+              <td className="px-4 py-2.5 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary, #111827)' }}>
+                <span className="tabular-nums">
+                  {week.totalLogged.toFixed(2)}
+                  {week.totalGoal !== null && (
+                    <span className="text-xs" style={{ color: 'var(--text-secondary, #6b7280)' }}>
+                      /{week.totalGoal.toFixed(0)}h
+                    </span>
+                  )}
+                  <PctBadge pct={week.totalPct} />
+                </span>
               </td>
             </tr>
           ))}
         </tbody>
 
-        {/* Totals footer */}
         <tfoot>
           <tr style={{ borderTop: '2px solid var(--border-card, #e5e7eb)', backgroundColor: 'var(--bg-table-header, #f9fafb)' }}>
             <td className="px-4 py-2.5 font-semibold" style={{ color: 'var(--text-primary, #111827)' }}>
               Totals ({weekCount} weeks)
             </td>
-            {categories.map((cat) => (
-              <td key={cat.name} className="px-4 py-2.5 text-right font-semibold tabular-nums" style={{ color: 'var(--text-primary, #111827)' }}>
-                {totals.categories[cat.name]?.toFixed(2) || '0.00'}
-              </td>
-            ))}
-            <td className="px-4 py-2.5 text-right font-bold tabular-nums" style={{ color: 'var(--text-primary, #111827)' }}>
-              {totals.total.toFixed(2)}
+            {categories.map((cat) => {
+              const cell = totals.categories[cat.name] || { logged: 0, goal: null, pct: null }
+              return (
+                <td key={cat.name} className="px-4 py-2.5 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary, #111827)' }}>
+                  <span className="tabular-nums">
+                    {cell.logged.toFixed(2)}
+                    {cell.goal !== null && (
+                      <span className="text-xs" style={{ color: 'var(--text-secondary, #6b7280)' }}>
+                        /{cell.goal.toFixed(0)}h
+                      </span>
+                    )}
+                    <PctBadge pct={cell.pct} />
+                  </span>
+                </td>
+              )
+            })}
+            <td className="px-4 py-2.5 text-right font-bold whitespace-nowrap" style={{ color: 'var(--text-primary, #111827)' }}>
+              <span className="tabular-nums">
+                {totals.totalLogged.toFixed(2)}
+                {totals.totalGoal !== null && (
+                  <span className="text-xs" style={{ color: 'var(--text-secondary, #6b7280)' }}>
+                    /{totals.totalGoal.toFixed(0)}h
+                  </span>
+                )}
+                <PctBadge pct={totals.totalPct} />
+              </span>
             </td>
           </tr>
         </tfoot>
