@@ -15,6 +15,41 @@ function GmailContent() {
   const [connecting, setConnecting] = useState(false)
   const [message, setMessage] = useState(null)
   const [importResult, setImportResult] = useState(null)
+  const [autoImport, setAutoImport] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('gmail_auto_import') === 'true'
+  })
+  const [lastAutoImport, setLastAutoImport] = useState(null)
+
+  // Auto-import polling
+  useEffect(() => {
+    if (!autoImport || !status?.hasGmailScope) return
+
+    // Import immediately on enable
+    importMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        setLastAutoImport(new Date())
+        if (data.imported > 0) setImportResult(data)
+      },
+    })
+
+    const interval = setInterval(() => {
+      importMutation.mutate(undefined, {
+        onSuccess: (data) => {
+          setLastAutoImport(new Date())
+          if (data.imported > 0) setImportResult(data)
+        },
+      })
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => clearInterval(interval)
+  }, [autoImport, status?.hasGmailScope])
+
+  function toggleAutoImport() {
+    const next = !autoImport
+    setAutoImport(next)
+    localStorage.setItem('gmail_auto_import', String(next))
+  }
 
   useEffect(() => {
     if (connectedParam === 'true') {
@@ -111,8 +146,9 @@ function GmailContent() {
               </div>
             </div>
 
-            {/* Import Button */}
-            <div className="border-t border-gray-100 pt-4">
+            {/* Import Controls */}
+            <div className="border-t border-gray-100 pt-4 space-y-4">
+              {/* Manual Import */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleImport}
@@ -144,6 +180,33 @@ function GmailContent() {
                     )}
                   </p>
                 )}
+              </div>
+
+              {/* Auto-Import Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Auto-import</p>
+                  <p className="text-xs text-gray-500">Automatically check for new emails every 5 minutes while the app is open</p>
+                  {autoImport && lastAutoImport && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Last checked: {lastAutoImport.toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={toggleAutoImport}
+                  className={clsx(
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0',
+                    autoImport ? 'bg-blue-600' : 'bg-gray-300'
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                      autoImport ? 'translate-x-6' : 'translate-x-1'
+                    )}
+                  />
+                </button>
               </div>
             </div>
           </div>
