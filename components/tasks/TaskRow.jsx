@@ -1,9 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import clsx from 'clsx'
-import { useToggleTask, useArchiveTask } from '@/hooks/useTasks'
-import { useSubtasks, useUpdateSubtask } from '@/hooks/useSubtasks'
+import { useToggleTask, useArchiveTask, useUpdateTask } from '@/hooks/useTasks'
+import { useSubtasks, useUpdateSubtask, useCreateSubtask, useDeleteSubtask, useReorderSubtasks } from '@/hooks/useSubtasks'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { tasksApi } from '@/lib/api/tasks'
 import { useQueryClient } from '@tanstack/react-query'
 import PriorityBadge from './PriorityBadge'
@@ -11,6 +14,139 @@ import OverdueBadge from './OverdueBadge'
 import NewBadge from './NewBadge'
 import LogHoursModal from '@/components/goals/LogHoursModal'
 import { useSyncTaskToGcal } from '@/hooks/useGoogleCalendar'
+
+function NotesPopup({ notes, onSave, onClose }) {
+  const [value, setValue] = useState(notes || '')
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Edit Notes</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-5">
+          <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={12} autoFocus
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[200px]"
+            placeholder="Add notes…" />
+        </div>
+        <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button onClick={() => onSave(value)} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Save Notes</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SortableSubItem({ subtask, editingId, editValue, setEditValue, editRef, onEditStart, onEditSave, onToggle, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: subtask.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center gap-2 group">
+      <button type="button" {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 shrink-0 touch-none">
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 6a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4zM8 14a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4zM8 22a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4z" />
+        </svg>
+      </button>
+      <input type="checkbox" checked={subtask.completed} onChange={() => onToggle(subtask)}
+        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0" />
+      {editingId === subtask.id ? (
+        <input ref={editRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)}
+          onBlur={() => onEditSave(subtask)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onEditSave(subtask) }; if (e.key === 'Escape') onEditStart(null) }}
+          className="flex-1 text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      ) : (
+        <span className={clsx('flex-1 text-sm cursor-pointer hover:text-blue-600', subtask.completed ? 'line-through text-gray-400' : 'text-gray-700')}
+          onClick={() => { onEditStart(subtask.id); setEditValue(subtask.name) }}>{subtask.name}</span>
+      )}
+      <button onClick={() => onDelete(subtask.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity shrink-0">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </li>
+  )
+}
+
+function SubtasksPopup({ taskId, onClose }) {
+  const { data: subtasks = [], isLoading } = useSubtasks(taskId)
+  const createMutation = useCreateSubtask(taskId)
+  const updateMutation = useUpdateSubtask(taskId)
+  const deleteMutation = useDeleteSubtask(taskId)
+  const reorderMutation = useReorderSubtasks(taskId)
+  const [items, setItems] = useState([])
+  const [newName, setNewName] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editValue, setEditValue] = useState('')
+  const editRef = useRef(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  useEffect(() => { setItems(subtasks) }, [subtasks])
+  useEffect(() => { if (editingId && editRef.current) editRef.current.focus() }, [editingId])
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const reordered = arrayMove(items, items.findIndex((s) => s.id === active.id), items.findIndex((s) => s.id === over.id))
+    setItems(reordered)
+    reorderMutation.mutate(reordered.map((s) => s.id))
+  }
+  function handleAdd() {
+    if (!newName.trim()) return
+    createMutation.mutate({ name: newName.trim() }, { onSuccess: () => setNewName('') })
+  }
+  function handleEditSave(subtask) {
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== subtask.name) updateMutation.mutate({ id: subtask.id, data: { name: trimmed } })
+    setEditingId(null)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Subtasks</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-5">
+          {isLoading ? <p className="text-sm text-gray-400 text-center py-4">Loading…</p> : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                <ul className="space-y-2 mb-4 max-h-[350px] overflow-y-auto">
+                  {items.map((sub) => (
+                    <SortableSubItem key={sub.id} subtask={sub} editingId={editingId} editValue={editValue}
+                      setEditValue={setEditValue} editRef={editRef} onEditStart={setEditingId} onEditSave={handleEditSave}
+                      onToggle={(s) => updateMutation.mutate({ id: s.id, data: { completed: !s.completed } })}
+                      onDelete={(id) => deleteMutation.mutate(id)} />
+                  ))}
+                  {items.length === 0 && <li className="text-sm text-gray-400 italic text-center py-2">No subtasks yet</li>}
+                </ul>
+              </SortableContext>
+            </DndContext>
+          )}
+          <div className="flex gap-2">
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}
+              placeholder="Add a subtask…" className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button onClick={handleAdd} disabled={createMutation.isPending || !newName.trim()}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">Add</button>
+          </div>
+        </div>
+        <div className="flex justify-end px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Done</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function InlineSubtasks({ taskId }) {
   const { data: subtasks = [], isLoading } = useSubtasks(taskId)
@@ -40,8 +176,12 @@ function InlineSubtasks({ taskId }) {
 export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   const toggleMutation = useToggleTask()
   const syncGcal = useSyncTaskToGcal()
+  const updateTask = useUpdateTask()
   const [subtasksOpen, setSubtasksOpen] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [notesPopupOpen, setNotesPopupOpen] = useState(false)
+  const [subtasksPopupOpen, setSubtasksPopupOpen] = useState(false)
+  const [localNotes, setLocalNotes] = useState(task.notes || '')
   const [showLogHours, setShowLogHours] = useState(false)
   const qc = useQueryClient()
 
@@ -155,6 +295,20 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
             </>
           )}
         </div>
+      </td>
+
+      {/* Notes popup */}
+      <td className="px-2 py-3 whitespace-nowrap">
+        <button type="button" onClick={() => setNotesPopupOpen(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline">
+          {localNotes ? 'View' : 'Add'}
+        </button>
+      </td>
+
+      {/* Subtasks popup */}
+      <td className="px-2 py-3 whitespace-nowrap">
+        <button type="button" onClick={() => setSubtasksPopupOpen(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline">
+          {task.subtask_count > 0 ? `View (${task.subtask_count})` : 'Add'}
+        </button>
       </td>
 
       {/* Priority */}
@@ -304,6 +458,20 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
         onSkip={handleLogHoursSkip}
         onClose={() => setShowLogHours(false)}
       />
+    )}
+    {notesPopupOpen && (
+      <NotesPopup
+        notes={localNotes}
+        onSave={(newNotes) => {
+          setLocalNotes(newNotes)
+          updateTask.mutate({ id: task.id, data: { name: task.name, notes: newNotes || null, status: task.status, priority: task.priority, due_date: task.due_date || null, category_id: task.category_id, subcategory_id: task.subcategory_id } })
+          setNotesPopupOpen(false)
+        }}
+        onClose={() => setNotesPopupOpen(false)}
+      />
+    )}
+    {subtasksPopupOpen && (
+      <SubtasksPopup taskId={task.id} onClose={() => setSubtasksPopupOpen(false)} />
     )}
   </>
   )
