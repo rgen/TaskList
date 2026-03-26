@@ -152,8 +152,15 @@ export default function TaskFilters({ filters, onChange }) {
             window.history.replaceState({}, '', window.location.pathname)
           }
         }}
-        className={`text-sm ${hasActiveFilters ? 'text-red-600 font-medium hover:underline' : 'text-blue-600 hover:underline'}`}
+        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+          hasActiveFilters
+            ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
+            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+        }`}
       >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
         Clear filters
       </button>
     </div>
