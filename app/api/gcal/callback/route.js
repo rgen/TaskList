@@ -24,18 +24,23 @@ export async function GET(request) {
     await saveTokens(userId, tokens, scope)
 
     // If connecting Gmail, create the label and enable Gmail import
+    let gmailError = null
     if (returnTo === 'gmail') {
       try {
         await ensureGmailLabel(userId)
       } catch (e) {
-        // Label creation failed but connection is still saved
-        console.error('Failed to create Gmail label:', e.message)
+        gmailError = e.message
       }
     }
 
-    const redirectPath = returnTo === 'gmail'
-      ? '/customization/gmail?connected=true'
-      : '/customization/google-calendar?connected=true'
+    let redirectPath
+    if (returnTo === 'gmail') {
+      redirectPath = gmailError
+        ? `/customization/gmail?connected=true&gmail_error=${encodeURIComponent(gmailError)}`
+        : '/customization/gmail?connected=true'
+    } else {
+      redirectPath = '/customization/google-calendar?connected=true'
+    }
 
     return NextResponse.redirect(new URL(redirectPath, request.url))
   } catch (e) {

@@ -8,6 +8,7 @@ function GmailContent() {
   const searchParams = useSearchParams()
   const connectedParam = searchParams.get('connected')
   const errorParam = searchParams.get('error')
+  const gmailErrorParam = searchParams.get('gmail_error')
 
   const { data: status, isLoading } = useGmailStatus()
   const importMutation = useImportEmails()
@@ -54,12 +55,14 @@ function GmailContent() {
   }
 
   useEffect(() => {
-    if (connectedParam === 'true') {
+    if (connectedParam === 'true' && gmailErrorParam) {
+      setMessage({ type: 'error', text: `Gmail connected but label creation failed: ${gmailErrorParam}` })
+    } else if (connectedParam === 'true') {
       setMessage({ type: 'success', text: 'Gmail connected successfully! The "TaskList" label has been created in your Gmail.' })
     } else if (errorParam) {
       setMessage({ type: 'error', text: `Connection failed: ${errorParam}` })
     }
-  }, [connectedParam, errorParam])
+  }, [connectedParam, errorParam, gmailErrorParam])
 
   async function handleConnect() {
     setConnecting(true)
