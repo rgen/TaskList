@@ -101,11 +101,11 @@
 /* Theme: Sunset Purple */
 [data-theme="sunset"] {
   --bg-body: #faf5ff;
-  --bg-sidebar: #7e22ce;
-  --border-sidebar: #9333ea;
-  --text-sidebar: #e9d5ff;
-  --text-sidebar-active: #c084fc;
-  --bg-sidebar-active: #9333ea;
+  --bg-sidebar: #a855f7;
+  --border-sidebar: #c084fc;
+  --text-sidebar: #ffffff;
+  --text-sidebar-active: #ffffff;
+  --bg-sidebar-active: #c084fc;
   --bg-card: #ffffff;
   --border-card: #e9d5ff;
   --text-primary: #3b0764;

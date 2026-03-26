@@ -56,7 +56,7 @@ const THEMES = [
     name: 'Sunset Purple',
     description: 'Bold purple sidebar with warm violet accents',
     preview: {
-      sidebar: '#7e22ce',
+      sidebar: '#a855f7',
       body: '#faf5ff',
       card: '#ffffff',
       accent: '#9333ea',
