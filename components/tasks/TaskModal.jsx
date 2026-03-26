@@ -6,7 +6,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTask, useCreateTask, useUpdateTask, TASKS_KEY } from '@/hooks/useTasks'
-import { useCategories } from '@/hooks/useCategories'
+import { useCategories, useCreateCategory, useCreateSubcategory } from '@/hooks/useCategories'
 import { subtasksApi, attachmentsApi } from '@/lib/api/subtasks'
 import SubtaskList from './SubtaskList'
 import AttachmentList from './AttachmentList'
@@ -185,12 +185,18 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
   const updateMutation = useUpdateTask()
 
   const { data: categories = [] } = useCategories()
+  const createCategory = useCreateCategory()
+  const createSubcategory = useCreateSubcategory()
   const [statusValue, setStatusValue] = useState('pending')
   const [categoryId, setCategoryId] = useState('')
   const [subcategoryId, setSubcategoryId] = useState('')
   const [isSchoologyTask, setIsSchoologyTask] = useState(false)
   const [pendingSubtasks, setPendingSubtasks] = useState([])
   const [pendingAttachments, setPendingAttachments] = useState([])
+  const [showAddCategory, setShowAddCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [showAddSubcategory, setShowAddSubcategory] = useState(false)
+  const [newSubcategoryName, setNewSubcategoryName] = useState('')
 
   const {
     register,
@@ -256,6 +262,29 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
     onClose()
   }
 
+  function handleAddCategory() {
+    if (!newCategoryName.trim()) return
+    createCategory.mutate(newCategoryName.trim(), {
+      onSuccess: (newCat) => {
+        setCategoryId(String(newCat.id))
+        setSubcategoryId('')
+        setNewCategoryName('')
+        setShowAddCategory(false)
+      },
+    })
+  }
+
+  function handleAddSubcategory() {
+    if (!newSubcategoryName.trim() || !categoryId) return
+    createSubcategory.mutate({ categoryId: Number(categoryId), name: newSubcategoryName.trim() }, {
+      onSuccess: (newSub) => {
+        setSubcategoryId(String(newSub.id))
+        setNewSubcategoryName('')
+        setShowAddSubcategory(false)
+      },
+    })
+  }
+
   const mutationError = (isEdit ? updateMutation : createMutation).error
 
   return (
@@ -319,37 +348,113 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
                     </div>
                   </div>
 
-                  {categories.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <select
-                          value={categoryId}
-                          onChange={(e) => { setCategoryId(e.target.value); setSubcategoryId('') }}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">— None —</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
-                        <select
-                          value={subcategoryId}
-                          onChange={(e) => setSubcategoryId(e.target.value)}
-                          disabled={!categoryId}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
-                        >
-                          <option value="">— None —</option>
-                          {(categories.find((c) => String(c.id) === categoryId)?.subcategories || []).map((sub) => (
-                            <option key={sub.id} value={sub.id}>{sub.name}</option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <select
+                        value={categoryId}
+                        onChange={(e) => {
+                          if (e.target.value === '__add__') {
+                            setShowAddCategory(true)
+                          } else {
+                            setCategoryId(e.target.value)
+                            setSubcategoryId('')
+                            setShowAddSubcategory(false)
+                          }
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">— None —</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                        <option value="__add__">+ Add Category</option>
+                      </select>
+                      {showAddCategory && (
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') { e.preventDefault(); handleAddCategory() }
+                              if (e.key === 'Escape') { setShowAddCategory(false); setNewCategoryName('') }
+                            }}
+                            placeholder="Category name"
+                            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCategory}
+                            disabled={!newCategoryName.trim() || createCategory.isPending}
+                            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setShowAddCategory(false); setNewCategoryName('') }}
+                            className="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                      <select
+                        value={subcategoryId}
+                        onChange={(e) => {
+                          if (e.target.value === '__add__') {
+                            setShowAddSubcategory(true)
+                          } else {
+                            setSubcategoryId(e.target.value)
+                          }
+                        }}
+                        disabled={!categoryId}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+                      >
+                        <option value="">— None —</option>
+                        {(categories.find((c) => String(c.id) === categoryId)?.subcategories || []).map((sub) => (
+                          <option key={sub.id} value={sub.id}>{sub.name}</option>
+                        ))}
+                        {categoryId && <option value="__add__">+ Add Subcategory</option>}
+                      </select>
+                      {showAddSubcategory && categoryId && (
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            value={newSubcategoryName}
+                            onChange={(e) => setNewSubcategoryName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') { e.preventDefault(); handleAddSubcategory() }
+                              if (e.key === 'Escape') { setShowAddSubcategory(false); setNewSubcategoryName('') }
+                            }}
+                            placeholder="Subcategory name"
+                            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddSubcategory}
+                            disabled={!newSubcategoryName.trim() || createSubcategory.isPending}
+                            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setShowAddSubcategory(false); setNewSubcategoryName('') }}
+                            className="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
