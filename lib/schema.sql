@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS google_calendar_connections (
 );
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS gcal_event_id TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS gmail_message_id TEXT;
 
 CREATE TABLE IF NOT EXISTS custom_charts (
   id SERIAL PRIMARY KEY,

@@ -6,6 +6,7 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const state = searchParams.get('state')
   const error = searchParams.get('error')
+  const scope = searchParams.get('scope')
 
   if (error) {
     return NextResponse.redirect(new URL('/customization/google-calendar?error=denied', request.url))
@@ -17,10 +18,15 @@ export async function GET(request) {
 
   try {
     await ensureGcalTable()
-    const userId = await verifyState(state)
+    const { userId, returnTo } = await verifyState(state)
     const tokens = await getTokensFromCode(code)
-    await saveTokens(userId, tokens)
-    return NextResponse.redirect(new URL('/customization/google-calendar?connected=true', request.url))
+    await saveTokens(userId, tokens, scope)
+
+    const redirectPath = returnTo === 'gmail'
+      ? '/customization/gmail?connected=true'
+      : '/customization/google-calendar?connected=true'
+
+    return NextResponse.redirect(new URL(redirectPath, request.url))
   } catch (e) {
     return NextResponse.redirect(new URL(`/customization/google-calendar?error=${encodeURIComponent(e.message)}`, request.url))
   }
