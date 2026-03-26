@@ -1,13 +1,7 @@
 import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
-
-function getSundayOfWeek(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00Z')
-  const day = d.getUTCDay()
-  d.setUTCDate(d.getUTCDate() - day)
-  return d.toISOString().slice(0, 10)
-}
+import { generateTasksForWeek, getSundayOfWeek } from '@/lib/goals'
 
 export async function GET(request) {
   const user = await getUser(request)
@@ -48,31 +42,14 @@ export async function POST(request) {
       VALUES (${userId}, ${name.trim()}, ${Number(category_id)}, ${subcategory_id ? Number(subcategory_id) : null}, ${tpw}, ${hpw}, ${start_date}, ${end_date})
       RETURNING *`
 
-    // Generate recurring tasks week by week
-    const hoursPerTask = Math.round((hpw / tpw) * 100) / 100
-    const endDate = new Date(end_date + 'T12:00:00Z')
-    let weekStart = getSundayOfWeek(start_date)
-    let weekNum = 1
+    // Only generate tasks for the current week
+    const currentWeekStart = getSundayOfWeek(new Date().toISOString().slice(0, 10))
+    const goalWeekStart = getSundayOfWeek(start_date)
 
-    while (new Date(weekStart + 'T12:00:00Z') <= endDate) {
-      for (let t = 0; t < tpw; t++) {
-        const dueDate = new Date(weekStart + 'T12:00:00Z')
-        dueDate.setUTCDate(dueDate.getUTCDate() + t)
-        if (dueDate > endDate) break
-        const dueDateStr = dueDate.toISOString().slice(0, 10)
-        const taskName = tpw > 1
-          ? `${name.trim()} — Wk ${weekNum} (${t + 1}/${tpw})`
-          : `${name.trim()} — Wk ${weekNum}`
+    // Use whichever is later: the goal start week or the current week
+    const weekToGenerate = goalWeekStart >= currentWeekStart ? goalWeekStart : currentWeekStart
 
-        await sql`
-          INSERT INTO tasks (user_id, name, status, priority, due_date, hours_goal, goal_id, category_id, subcategory_id)
-          VALUES (${userId}, ${taskName}, 'pending', 'medium', ${dueDateStr}, ${hoursPerTask}, ${goal.id}, ${Number(category_id)}, ${subcategory_id ? Number(subcategory_id) : null})`
-      }
-      const next = new Date(weekStart + 'T12:00:00Z')
-      next.setUTCDate(next.getUTCDate() + 7)
-      weekStart = next.toISOString().slice(0, 10)
-      weekNum++
-    }
+    await generateTasksForWeek(goal, weekToGenerate, userId)
 
     return NextResponse.json(goal, { status: 201 })
   } catch (e) {

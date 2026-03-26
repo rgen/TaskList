@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
+import { ensureCurrentWeekTasks } from '@/lib/goals'
 
 export async function GET(request) {
   const user = await getUser(request)
@@ -8,6 +9,9 @@ export async function GET(request) {
 
   try {
     const userId = Number(user.id)
+
+    // Ensure current week's tasks exist (fallback if cron missed)
+    await ensureCurrentWeekTasks(userId)
     const { rows } = await sql`
       WITH week_bounds AS (
         SELECT
