@@ -219,14 +219,17 @@ body {
   border-color: #374151 !important;
 }
 
-[data-theme="dark"] .border-r,
-[data-theme="dark"] .border-b {
-  border-color: #4b5563;
+[data-theme="dark"] .grid > div {
+  border-color: #4b5563 !important;
 }
 
-[data-theme="dark"] .rounded-xl,
-[data-theme="dark"] .rounded-lg {
-  border-color: #4b5563;
+[data-theme="dark"] .grid.grid-cols-7 > div {
+  border-color: #4b5563 !important;
+}
+
+[data-theme="dark"] .border-r.border-gray-100,
+[data-theme="dark"] .border-b.border-gray-100 {
+  border-color: #4b5563 !important;
 }
 
 [data-theme="dark"] .bg-blue-50 {
