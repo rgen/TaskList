@@ -49,7 +49,7 @@ function TasksContent() {
         </div>
       </div>
       {view === 'list' ? (
-        <TaskTable initialFilters={initialFilters} />
+        <TaskTable key={JSON.stringify(initialFilters)} initialFilters={initialFilters} />
       ) : (
         <TaskScheduleView />
       )}
