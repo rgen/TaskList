@@ -2,6 +2,19 @@ import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 
+function toDateStr(d) {
+  if (!d) return null
+  if (typeof d === 'string') return d.slice(0, 10)
+  return new Date(d).toISOString().slice(0, 10)
+}
+
+function getSundayOfWeek(dateStr) {
+  const d = new Date(toDateStr(dateStr) + 'T12:00:00Z')
+  const day = d.getUTCDay()
+  d.setUTCDate(d.getUTCDate() - day)
+  return d.toISOString().slice(0, 10)
+}
+
 export async function GET(request) {
   const user = await getUser(request)
   if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -38,35 +51,48 @@ export async function GET(request) {
       WHERE g.user_id = ${userId}
     `
 
-    // Get unique categories and weeks
+    // Build categories from both tasks AND goals
     const categorySet = new Map()
-    const weekSet = new Set()
+    rows.forEach((row) => categorySet.set(row.category_name, row.category_id))
+    goalRows.forEach((g) => categorySet.set(g.category_name, g.category_id))
+    const categories = Array.from(categorySet.entries()).map(([name, id]) => ({ name, id }))
 
-    rows.forEach((row) => {
-      categorySet.set(row.category_name, row.category_id)
-      weekSet.add(row.week_start)
+    // Build weeks from both tasks AND goals
+    const weekSet = new Set()
+    rows.forEach((row) => weekSet.add(toDateStr(row.week_start)))
+
+    // Add weeks from goals (every week the goal spans)
+    goalRows.forEach((g) => {
+      const goalStart = toDateStr(g.start_date)
+      const goalEnd = toDateStr(g.end_date)
+      let ws = getSundayOfWeek(goalStart)
+      const endDate = new Date(goalEnd + 'T12:00:00Z')
+      while (new Date(ws + 'T12:00:00Z') <= endDate) {
+        weekSet.add(ws)
+        const next = new Date(ws + 'T12:00:00Z')
+        next.setUTCDate(next.getUTCDate() + 7)
+        ws = next.toISOString().slice(0, 10)
+      }
     })
 
-    const categories = Array.from(categorySet.entries()).map(([name, id]) => ({ name, id }))
     const weeks = Array.from(weekSet).sort((a, b) => new Date(a) - new Date(b))
 
     // For each week and category, find the applicable goal target
-    // A goal matches a week if the goal's date range overlaps with the week (Sun-Sat)
     function getGoalTarget(weekStart, categoryName) {
-      const wsDate = new Date(weekStart)
-      const weDate = new Date(weekStart)
-      weDate.setDate(weDate.getDate() + 6) // Saturday
+      const wsDate = new Date(weekStart + 'T12:00:00Z')
+      const weDate = new Date(weekStart + 'T12:00:00Z')
+      weDate.setUTCDate(weDate.getUTCDate() + 6)
 
       const matchingGoals = goalRows.filter((g) =>
         g.category_name === categoryName &&
-        new Date(g.start_date) <= weDate &&
-        new Date(g.end_date) >= wsDate
+        new Date(toDateStr(g.start_date) + 'T12:00:00Z') <= weDate &&
+        new Date(toDateStr(g.end_date) + 'T12:00:00Z') >= wsDate
       )
       if (!matchingGoals.length) return null
       return matchingGoals.reduce((sum, g) => sum + Number(g.hours_per_week), 0)
     }
 
-    // Build week rows
+    // Build week rows — one row per week with all categories as columns
     const weekRows = weeks.map((week) => {
       const row = { week_start: week, categories: {} }
       let totalLogged = 0
@@ -75,7 +101,7 @@ export async function GET(request) {
 
       categories.forEach((cat) => {
         const match = rows.find(
-          (r) => r.week_start === week && r.category_name === cat.name
+          (r) => toDateStr(r.week_start) === week && r.category_name === cat.name
         )
         const hours = match ? Number(match.total_hours) : 0
         const goal = getGoalTarget(week, cat.name)
@@ -106,7 +132,6 @@ export async function GET(request) {
         .filter((r) => r.category_name === cat.name)
         .reduce((acc, r) => acc + Number(r.total_hours), 0)
 
-      // Sum goals across all weeks for this category
       let sumGoal = 0
       let catHasGoal = false
       weeks.forEach((week) => {
