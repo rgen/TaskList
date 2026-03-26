@@ -41,6 +41,7 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
   const toggleMutation = useToggleTask()
   const syncGcal = useSyncTaskToGcal()
   const [subtasksOpen, setSubtasksOpen] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [showLogHours, setShowLogHours] = useState(false)
   const qc = useQueryClient()
 
@@ -101,7 +102,26 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
             {task.name}
           </span>
           {task.notes && (
-            <span className="text-xs text-gray-400 truncate max-w-xs">{task.notes}</span>
+            <>
+              <button
+                type="button"
+                onClick={() => setNotesOpen((o) => !o)}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium w-fit"
+              >
+                <svg
+                  className={clsx('w-3 h-3 transition-transform duration-150', notesOpen && 'rotate-90')}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                {notesOpen ? 'Hide Notes' : 'Read Notes'}
+              </button>
+              {notesOpen && (
+                <div className="text-xs text-gray-500 whitespace-pre-wrap bg-gray-50 rounded-lg p-3 max-w-md max-h-60 overflow-y-auto">
+                  {task.notes}
+                </div>
+              )}
+            </>
           )}
           <div className="flex gap-1.5 flex-wrap">
             {task.is_overdue && <OverdueBadge />}
