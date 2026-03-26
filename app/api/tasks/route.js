@@ -20,6 +20,7 @@ export async function GET(request) {
     const sort = searchParams.get('sort') || 'created_at'
     const order = searchParams.get('order') || 'desc'
     const showArchived = searchParams.get('show_archived') === 'true'
+    const hideGoalTasks = searchParams.get('hide_goal_tasks') === 'true'
 
     const validSorts = ['created_at', 'updated_at', 'due_date', 'priority', 'name', 'status']
     const sortCol = validSorts.includes(sort) ? sort : 'created_at'
@@ -41,6 +42,7 @@ export async function GET(request) {
     }
     if (due_date_from) { conditions.push(`t.due_date::date >= $${values.length + 1}::date`); values.push(due_date_from) }
     if (overdue === 'true') { conditions.push(`t.due_date IS NOT NULL AND t.due_date < CURRENT_DATE::text AND t.status != 'completed'`) }
+    if (hideGoalTasks) { conditions.push(`t.goal_id IS NULL`) }
 
     conditions.push(`t.user_id = $${values.length + 1}`)
     values.push(Number(user.id))

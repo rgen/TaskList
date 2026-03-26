@@ -16,7 +16,7 @@ export default function TaskFilters({ filters, onChange }) {
   const selectedCategory = categories.find((c) => String(c.id) === String(filters.category_id))
   const subcategories = selectedCategory?.subcategories || []
 
-  const hasActiveFilters = filters.status || filters.priority || filters.category_id || filters.subcategory_id || filters.overdue || filters.due_date
+  const hasActiveFilters = filters.status || filters.priority || filters.category_id || filters.subcategory_id || filters.overdue || filters.due_date || filters.hide_goal_tasks
 
   return (
     <div className="flex flex-wrap gap-3 items-center">
@@ -110,6 +110,22 @@ export default function TaskFilters({ filters, onChange }) {
           <option value="asc">Asc</option>
         </select>
       </div>
+
+      {/* Goal Tasks toggle */}
+      <button
+        onClick={() => update('hide_goal_tasks', filters.hide_goal_tasks ? '' : 'true')}
+        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+          filters.hide_goal_tasks
+            ? 'bg-indigo-600 text-white border-indigo-600'
+            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        {filters.hide_goal_tasks ? 'Goal Tasks Hidden' : 'Hide Goal Tasks'}
+      </button>
 
       {/* Show Archived toggle */}
       <button
