@@ -216,15 +216,16 @@ export default function TaskTable({ initialFilters = {} }) {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="pl-4 pr-2 py-2 w-10" />
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ minWidth: '320px' }}>Task</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '80px' }}>Notes</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ minWidth: '110px' }}>Priority</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '130px' }}>Due Date</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subcategory</th>
-                  <th className="pl-3 pr-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ minWidth: '300px' }}>Task</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '60px' }}>Notes</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '60px' }}>Subtasks</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '85px' }}>Priority</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '125px' }}>Due Date</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '95px' }}>Status</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '105px' }}>Category</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ width: '105px' }}>Subcategory</th>
+                  <th className="pl-2 pr-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
