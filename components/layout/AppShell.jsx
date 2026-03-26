@@ -11,7 +11,7 @@ export default function AppShell({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
       <Sidebar />
       <main className="flex-1 overflow-auto">
         {children}
