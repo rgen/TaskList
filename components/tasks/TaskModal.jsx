@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
@@ -13,9 +13,27 @@ import AttachmentList from './AttachmentList'
 import AttachmentInput from './AttachmentInput'
 import StatusSelect from './StatusSelect'
 
-function SortablePendingItem({ item, onRemove }) {
+function SortablePendingItem({ item, onRemove, onRename }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(item.name)
+  const inputRef = useRef(null)
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus()
+  }, [editing])
+
+  function handleSave() {
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== item.name) onRename(item.id, trimmed)
+    setEditing(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleSave() }
+    if (e.key === 'Escape') { setEditValue(item.name); setEditing(false) }
+  }
 
   return (
     <li ref={setNodeRef} style={style} className="flex items-center gap-2 group">
@@ -32,7 +50,25 @@ function SortablePendingItem({ item, onRemove }) {
           <circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/>
         </svg>
       </button>
-      <span className="flex-1 text-sm text-gray-700">{item.name}</span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          className="flex-1 text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      ) : (
+        <span
+          className="flex-1 text-sm text-gray-700 cursor-pointer hover:text-blue-600"
+          onClick={() => { setEditValue(item.name); setEditing(true) }}
+          title="Click to edit"
+        >
+          {item.name}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => onRemove(item.id)}
@@ -47,7 +83,7 @@ function SortablePendingItem({ item, onRemove }) {
   )
 }
 
-function PendingSubtaskList({ items, onAdd, onRemove, onReorder }) {
+function PendingSubtaskList({ items, onAdd, onRemove, onReorder, onRename }) {
   const [newName, setNewName] = useState('')
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -77,7 +113,7 @@ function PendingSubtaskList({ items, onAdd, onRemove, onReorder }) {
         <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
           <ul className="space-y-2 mb-3">
             {items.map(item => (
-              <SortablePendingItem key={item.id} item={item} onRemove={onRemove} />
+              <SortablePendingItem key={item.id} item={item} onRemove={onRemove} onRename={onRename} />
             ))}
             {items.length === 0 && (
               <li className="text-sm text-gray-400 italic">No subtasks yet</li>
@@ -369,6 +405,7 @@ export default function TaskModal({ isOpen, taskId, onClose }) {
                     onAdd={(name) => setPendingSubtasks((p) => [...p, { id: `${Date.now()}-${Math.random()}`, name }])}
                     onRemove={(id) => setPendingSubtasks((p) => p.filter(item => item.id !== id))}
                     onReorder={(reordered) => setPendingSubtasks(reordered)}
+                    onRename={(id, newName) => setPendingSubtasks((p) => p.map(item => item.id === id ? { ...item, name: newName } : item))}
                   />
                 )}
               </div>

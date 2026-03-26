@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -16,8 +16,28 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useCreateSubtask, useUpdateSubtask, useDeleteSubtask, useReorderSubtasks } from '@/hooks/useSubtasks'
 
-function SortableSubtask({ subtask, onToggle, onDelete }) {
+function SortableSubtask({ subtask, onToggle, onDelete, onRename }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: subtask.id })
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(subtask.name)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus()
+  }, [editing])
+
+  function handleSave() {
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== subtask.name) {
+      onRename(subtask.id, trimmed)
+    }
+    setEditing(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleSave() }
+    if (e.key === 'Escape') { setEditValue(subtask.name); setEditing(false) }
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -44,9 +64,25 @@ function SortableSubtask({ subtask, onToggle, onDelete }) {
         onChange={() => onToggle(subtask)}
         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
       />
-      <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-        {subtask.name}
-      </span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          className="flex-1 text-sm border border-blue-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      ) : (
+        <span
+          className={`flex-1 text-sm cursor-pointer hover:text-blue-600 ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
+          onClick={() => { setEditValue(subtask.name); setEditing(true) }}
+          title="Click to edit"
+        >
+          {subtask.name}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => onDelete(subtask.id)}
@@ -70,7 +106,7 @@ export default function SubtaskList({ taskId, subtasks = [] }) {
   const reorderMutation = useReorderSubtasks(taskId)
 
   // Keep local items in sync when subtasks prop changes
-  if (subtasks.length !== items.length || subtasks.some((s, i) => s.id !== items[i]?.id || s.completed !== items[i]?.completed)) {
+  if (subtasks.length !== items.length || subtasks.some((s, i) => s.id !== items[i]?.id || s.completed !== items[i]?.completed || s.name !== items[i]?.name)) {
     setItems(subtasks)
   }
 
@@ -101,6 +137,10 @@ export default function SubtaskList({ taskId, subtasks = [] }) {
     updateMutation.mutate({ id: subtask.id, data: { completed: !subtask.completed } })
   }
 
+  function renameSubtask(id, newName) {
+    updateMutation.mutate({ id, data: { name: newName } })
+  }
+
   function handleDelete(id) {
     deleteMutation.mutate(id)
   }
@@ -117,6 +157,7 @@ export default function SubtaskList({ taskId, subtasks = [] }) {
                 subtask={subtask}
                 onToggle={toggleSubtask}
                 onDelete={handleDelete}
+                onRename={renameSubtask}
               />
             ))}
             {items.length === 0 && (
