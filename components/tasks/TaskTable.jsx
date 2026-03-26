@@ -138,8 +138,7 @@ export default function TaskTable({ initialFilters = {} }) {
               </svg>
             </button>
           </div>
-          {viewMode === 'traditional' && (
-            <button
+          <button
               onClick={() => setGridEditMode((v) => !v)}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
                 gridEditMode
@@ -153,7 +152,6 @@ export default function TaskTable({ initialFilters = {} }) {
               </svg>
               {gridEditMode ? 'Done Editing' : 'Grid Edit'}
             </button>
-          )}
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -222,11 +220,20 @@ export default function TaskTable({ initialFilters = {} }) {
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Due</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="pl-3 pr-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task) => (
+                {tasks.map((task) => gridEditMode ? (
+                  <GridEditRow
+                    key={task.id}
+                    task={task}
+                    onDelete={setDeleteTarget}
+                    onArchive={setArchiveTarget}
+                  />
+                ) : (
                   <SlimTaskRow
                     key={task.id}
                     task={task}

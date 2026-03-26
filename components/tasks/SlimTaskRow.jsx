@@ -31,6 +31,19 @@ export default function SlimTaskRow({ task, onEdit, onDelete }) {
       <td className={clsx('px-3 py-1.5 whitespace-nowrap text-xs capitalize', strikeClass, !done && (task.status === 'pending' ? 'text-yellow-600' : 'text-blue-600'))}>
         {task.status}
       </td>
+      <td className={clsx('px-3 py-1.5 whitespace-nowrap text-xs', strikeClass, !done && 'text-gray-500')}>
+        {!task.due_date
+          ? '—'
+          : (() => {
+              const days = Math.ceil((new Date(task.due_date) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))
+              if (days === 0) return 'Due today'
+              if (days > 0) return `${days}d`
+              return `${Math.abs(days)}d over`
+            })()}
+      </td>
+      <td className={clsx('px-3 py-1.5 whitespace-nowrap text-xs', strikeClass, !done && 'text-gray-500')}>
+        {task.category_name || '—'}
+      </td>
       <td className="pl-3 pr-4 py-1.5 whitespace-nowrap">
         <div className="flex items-center gap-1">
           <button
