@@ -37,7 +37,7 @@ export default function WeekView({
               isDrop && 'ring-2 ring-inset ring-blue-300'
             )}
             style={{
-              borderRight: isLast ? 'none' : '1px solid var(--border-card, #f3f4f6)',
+              borderRight: isLast ? 'none' : '1px solid var(--border-calendar, #d1d5db)',
               backgroundColor: isDrop ? 'var(--bg-hover, #eff6ff)' : undefined,
             }}
             onDragOver={(e) => handleDragOver(e, day)}
@@ -46,7 +46,7 @@ export default function WeekView({
           >
             {/* Column header */}
             <div className="py-3 text-center" style={{
-              borderBottom: '1px solid var(--border-card, #e5e7eb)',
+              borderBottom: '1px solid var(--border-calendar, #d1d5db)',
               backgroundColor: isToday ? 'var(--bg-hover, #eff6ff)' : undefined,
             }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">

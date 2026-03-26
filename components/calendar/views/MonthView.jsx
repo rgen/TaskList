@@ -35,7 +35,7 @@ export default function MonthView({
 
   return (
     <>
-      <div className="grid grid-cols-7" style={{ borderBottom: '1px solid var(--border-card, #e5e7eb)' }}>
+      <div className="grid grid-cols-7" style={{ borderBottom: '1px solid var(--border-calendar, #d1d5db)' }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
           <div key={d} className="py-2 text-center text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary, #6b7280)' }}>
             {d}
@@ -60,8 +60,8 @@ export default function MonthView({
                 isDrop && 'ring-2 ring-inset ring-blue-300'
               )}
               style={{
-                borderBottom: isLastRow ? 'none' : '1px solid var(--border-card, #f3f4f6)',
-                borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--border-card, #f3f4f6)',
+                borderBottom: isLastRow ? 'none' : '1px solid var(--border-calendar, #d1d5db)',
+                borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--border-calendar, #d1d5db)',
                 backgroundColor: isDrop ? 'var(--bg-hover, #eff6ff)' : !isCurrentMonth ? 'var(--bg-body, #f9fafb)' : undefined,
               }}
               onDragOver={(e) => handleDragOver(e, day)}

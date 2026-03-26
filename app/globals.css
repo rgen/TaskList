@@ -15,6 +15,10 @@
 }
 
 /* Theme: Default (light gray) */
+[data-theme="default"], :root {
+  --border-calendar: #d1d5db;
+}
+
 [data-theme="default"] {
   --bg-body: #f9fafb;
   --bg-sidebar: #f3f4f6;
@@ -54,6 +58,7 @@
   --accent-hover: #2563eb;
   --bg-table-header: #4b5563;
   --bg-hover: #6b7280;
+  --border-calendar: #4b5563;
 }
 
 /* Theme: Ocean Blue */
@@ -75,6 +80,7 @@
   --accent-hover: #1d4ed8;
   --bg-table-header: #eff6ff;
   --bg-hover: #dbeafe;
+  --border-calendar: #93c5fd;
 }
 
 /* Theme: Forest Green */
@@ -96,6 +102,7 @@
   --accent-hover: #15803d;
   --bg-table-header: #f0fdf4;
   --bg-hover: #dcfce7;
+  --border-calendar: #86efac;
 }
 
 /* Theme: Sunset Purple */
@@ -117,6 +124,7 @@
   --accent-hover: #7e22ce;
   --bg-table-header: #faf5ff;
   --bg-hover: #f3e8ff;
+  --border-calendar: #c4b5fd;
 }
 
 /* Theme: Rose Pink */
@@ -138,6 +146,7 @@
   --accent-hover: #db2777;
   --bg-table-header: #fdf2f8;
   --bg-hover: #fce7f3;
+  --border-calendar: #f9a8d4;
 }
 
 /* Apply theme variables */
