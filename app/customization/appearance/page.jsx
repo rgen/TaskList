@@ -68,11 +68,11 @@ const THEMES = [
     name: 'Rose Pink',
     description: 'Warm rose sidebar with soft pink tones',
     preview: {
-      sidebar: '#e11d48',
-      body: '#fff1f2',
+      sidebar: '#f472b6',
+      body: '#fdf2f8',
       card: '#ffffff',
-      accent: '#e11d48',
-      text: '#881337',
+      accent: '#ec4899',
+      text: '#831843',
     },
   },
 ]
