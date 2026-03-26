@@ -18,3 +18,14 @@ export function useImportEmails() {
     },
   })
 }
+
+export function useDisconnectGmail() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => gmailApi.disconnect(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['gmail-status'] })
+      qc.invalidateQueries({ queryKey: ['tasks'] })
+    },
+  })
+}

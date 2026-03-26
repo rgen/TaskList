@@ -1,7 +1,7 @@
 'use client'
 import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useGmailStatus, useImportEmails } from '@/hooks/useGmail'
+import { useGmailStatus, useImportEmails, useDisconnectGmail } from '@/hooks/useGmail'
 import clsx from 'clsx'
 
 function GmailContent() {
@@ -11,10 +11,12 @@ function GmailContent() {
 
   const { data: status, isLoading } = useGmailStatus()
   const importMutation = useImportEmails()
+  const disconnectMutation = useDisconnectGmail()
 
   const [connecting, setConnecting] = useState(false)
   const [message, setMessage] = useState(null)
   const [importResult, setImportResult] = useState(null)
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
   const [autoImport, setAutoImport] = useState(() => {
     if (typeof window === 'undefined') return false
     return localStorage.getItem('gmail_auto_import') === 'true'
@@ -261,6 +263,58 @@ function GmailContent() {
               <li>Tasks from emails show up with all other tasks in the Tasks page</li>
             </ul>
           </div>
+
+          {/* Disconnect */}
+          <div className="bg-white rounded-xl border border-red-100 shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Disconnect Gmail Import</p>
+                <p className="text-xs text-gray-500 mt-0.5">Stop importing emails as tasks. Your Google Calendar connection will not be affected.</p>
+              </div>
+              <button
+                onClick={() => setShowDisconnectConfirm(true)}
+                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+
+          {/* Disconnect confirmation */}
+          {showDisconnectConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Disconnect Gmail Import?</h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  This will disable Gmail import. Tasks already imported will remain, but new emails won't be pulled in. Your Google Calendar connection stays active.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowDisconnectConfirm(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      disconnectMutation.mutate(undefined, {
+                        onSuccess: () => {
+                          setShowDisconnectConfirm(false)
+                          setAutoImport(false)
+                          localStorage.removeItem('gmail_auto_import')
+                          setMessage({ type: 'success', text: 'Gmail import disconnected.' })
+                        },
+                      })
+                    }}
+                    disabled={disconnectMutation.isPending}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {disconnectMutation.isPending ? 'Disconnecting…' : 'Disconnect'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
