@@ -33,19 +33,22 @@ export default function WeekView({
           <div
             key={dateKey}
             className={clsx(
-              'min-h-[450px] border-r border-gray-100 transition-colors',
-              isLast && 'border-r-0',
-              isDrop && 'bg-blue-50 ring-2 ring-inset ring-blue-300'
+              'min-h-[450px] transition-colors',
+              isDrop && 'ring-2 ring-inset ring-blue-300'
             )}
+            style={{
+              borderRight: isLast ? 'none' : '1px solid var(--border-card, #f3f4f6)',
+              backgroundColor: isDrop ? 'var(--bg-hover, #eff6ff)' : undefined,
+            }}
             onDragOver={(e) => handleDragOver(e, day)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, day)}
           >
             {/* Column header */}
-            <div className={clsx(
-              'py-3 text-center border-b border-gray-200',
-              isToday && 'bg-blue-50'
-            )}>
+            <div className="py-3 text-center" style={{
+              borderBottom: '1px solid var(--border-card, #e5e7eb)',
+              backgroundColor: isToday ? 'var(--bg-hover, #eff6ff)' : undefined,
+            }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 {format(day, 'EEE')}
               </p>
