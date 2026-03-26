@@ -138,7 +138,7 @@ export default function Sidebar() {
   return (
     <aside className="w-56 min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border-sidebar)' }}>
       <div className="h-16 flex items-center px-6" style={{ borderBottom: '1px solid var(--border-sidebar)' }}>
-        <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>TaskList</span>
+        <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-sidebar)' }}>TaskList</span>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => {
