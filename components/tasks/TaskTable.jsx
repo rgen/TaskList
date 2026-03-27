@@ -72,14 +72,31 @@ export default function TaskTable({ initialFilters = {} }) {
   const [archiveTarget, setArchiveTarget] = useState(null)
   const [gridEditMode, setGridEditMode] = useState(false)
   const [quickAddName, setQuickAddName] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const quickAddRef = useRef(null)
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window === 'undefined') return 'traditional'
     return localStorage.getItem('task_view_mode') || 'traditional'
   })
 
-  const { data: tasks = [], isLoading, isError, error } = useTasks(filters)
+  const { data: rawTasks = [], isLoading, isError, error } = useTasks(filters)
   const createTask = useCreateTask()
+
+  // Client-side search filtering
+  const tasks = searchQuery.trim()
+    ? rawTasks.filter((t) => {
+        const q = searchQuery.toLowerCase()
+        return (
+          (t.name || '').toLowerCase().includes(q) ||
+          (t.notes || '').toLowerCase().includes(q) ||
+          (t.category_name || '').toLowerCase().includes(q) ||
+          (t.subcategory_name || '').toLowerCase().includes(q) ||
+          (t.status || '').toLowerCase().includes(q) ||
+          (t.priority || '').toLowerCase().includes(q) ||
+          (t.due_date || '').includes(q)
+        )
+      })
+    : rawTasks
 
   function handleQuickAdd() {
     if (!quickAddName.trim()) return
@@ -167,6 +184,35 @@ export default function TaskTable({ initialFilters = {} }) {
             New Task
           </button>
         </div>
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks by name, notes, category, status, priority…"
+            className="flex-1 text-sm bg-transparent outline-none placeholder-gray-400"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-gray-400 hover:text-gray-600 shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <span className="text-xs text-gray-500 shrink-0">{tasks.length} result{tasks.length !== 1 ? 's' : ''}</span>
+        )}
       </div>
 
       {/* Quick Add */}
