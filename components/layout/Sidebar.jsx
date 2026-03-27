@@ -137,8 +137,8 @@ export default function Sidebar() {
   const pathname = usePathname()
   const isCustomizationActive = pathname.startsWith('/customization')
   const isGoalsActive = pathname.startsWith('/goals')
-  const [customizationOpen, setCustomizationOpen] = useState(isCustomizationActive)
-  const [goalsOpen, setGoalsOpen] = useState(isGoalsActive)
+  const [customizationOpen, setCustomizationOpen] = useState(true)
+  const [goalsOpen, setGoalsOpen] = useState(true)
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
