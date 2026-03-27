@@ -267,6 +267,7 @@ export default function TaskTable({ initialFilters = {} }) {
                     task={task}
                     onEdit={openEdit}
                     onDelete={setDeleteTarget}
+                    onArchive={setArchiveTarget}
                   />
                 ))}
               </tbody>
