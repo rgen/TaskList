@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import clsx from 'clsx'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const navItems = [
   {
@@ -135,21 +135,120 @@ const customizationItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const isCustomizationActive = pathname.startsWith('/customization')
   const isGoalsActive = pathname.startsWith('/goals')
   const [customizationOpen, setCustomizationOpen] = useState(true)
   const [goalsOpen, setGoalsOpen] = useState(true)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [allUsers, setAllUsers] = useState([])
+  const [switcherOpen, setSwitcherOpen] = useState(false)
+  const switcherRef = useRef(null)
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.json()).then(setCurrentUser).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (currentUser?.user_type === 'admin') {
+      fetch('/api/auth/users').then(r => r.json()).then(setAllUsers).catch(() => {})
+    }
+  }, [currentUser?.user_type])
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target)) setSwitcherOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const handleSwitchUser = async (userId) => {
+    await fetch('/api/auth/switch-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId || null }),
+    })
+    setSwitcherOpen(false)
+    window.location.reload()
+  }
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     window.location.href = '/login'
   }
 
+  const isAdmin = currentUser?.user_type === 'admin'
+
   return (
     <aside className="w-56 min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border-sidebar)' }}>
       <div className="h-16 flex items-center px-6" style={{ borderBottom: '1px solid var(--border-sidebar)' }}>
         <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-sidebar)' }}>TaskList</span>
       </div>
+
+      {/* User info & switcher */}
+      {currentUser && (
+        <div className="px-3 pt-3 pb-1" ref={switcherRef}>
+          <div className="relative">
+            <button
+              onClick={() => isAdmin && setSwitcherOpen(v => !v)}
+              className={clsx(
+                'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
+                isAdmin ? 'hover:opacity-100 cursor-pointer' : 'cursor-default'
+              )}
+              style={{ color: 'var(--text-sidebar)', backgroundColor: currentUser.is_switched ? 'rgba(251, 191, 36, 0.15)' : 'transparent' }}
+            >
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                style={{ backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }}>
+                {currentUser.username.charAt(0).toUpperCase()}
+              </div>
+              <span className="font-medium truncate">{currentUser.username}</span>
+              {isAdmin && (
+                <svg className={clsx('w-3 h-3 ml-auto shrink-0 transition-transform', switcherOpen && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
+
+            {switcherOpen && (
+              <div className="absolute left-0 right-0 mt-1 rounded-lg shadow-lg border z-50 py-1 max-h-48 overflow-y-auto"
+                style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-sidebar)' }}>
+                {allUsers.map(u => (
+                  <button
+                    key={u.id}
+                    onClick={() => handleSwitchUser(u.id === currentUser.id && !currentUser.is_switched ? null : u.id)}
+                    className={clsx(
+                      'w-full text-left px-3 py-1.5 text-sm transition-colors flex items-center gap-2',
+                      u.username === currentUser.username ? 'font-semibold' : 'opacity-80 hover:opacity-100'
+                    )}
+                    style={{ color: 'var(--text-sidebar)' }}
+                  >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={{ backgroundColor: 'var(--bg-sidebar-active)', color: 'var(--text-sidebar-active)' }}>
+                      {u.username.charAt(0).toUpperCase()}
+                    </div>
+                    {u.username}
+                    {u.username === currentUser.username && ' (current)'}
+                  </button>
+                ))}
+                {currentUser.is_switched && (
+                  <>
+                    <div className="border-t my-1" style={{ borderColor: 'var(--border-sidebar)' }} />
+                    <button
+                      onClick={() => handleSwitchUser(null)}
+                      className="w-full text-left px-3 py-1.5 text-xs opacity-70 hover:opacity-100 transition-colors"
+                      style={{ color: 'var(--text-sidebar)' }}
+                    >
+                      Back to my account
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => {
           const isActive = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to)

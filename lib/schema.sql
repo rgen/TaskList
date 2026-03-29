@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS google_calendar_connections (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type TEXT NOT NULL DEFAULT 'standard';
+
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS gcal_event_id TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS gmail_message_id TEXT;
 
