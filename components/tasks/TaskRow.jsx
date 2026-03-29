@@ -17,6 +17,14 @@ import { useSyncTaskToGcal } from '@/hooks/useGoogleCalendar'
 
 import NotesModal from './NotesModal'
 
+function formatGoalTime(decimalHours) {
+  const totalMinutes = Math.round(decimalHours * 60)
+  if (totalMinutes < 60) return `${totalMinutes}m`
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
 function SortableSubItem({ subtask, editingId, editValue, setEditValue, editRef, onEditStart, onEditSave, onToggle, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: subtask.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
@@ -222,8 +230,8 @@ export default function TaskRow({ task, onEdit, onDelete, onArchive }) {
             {task.goal_id && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 font-medium">
                 {task.hours_logged != null
-                  ? `${task.hours_logged}h / ${task.hours_goal ?? '?'}h`
-                  : task.hours_goal != null ? `Goal: ${task.hours_goal}h` : 'Goal task'}
+                  ? `${formatGoalTime(task.hours_logged)} / ${task.hours_goal != null ? formatGoalTime(task.hours_goal) : '?'}`
+                  : task.hours_goal != null ? `Goal: ${formatGoalTime(task.hours_goal)}` : 'Goal task'}
               </span>
             )}
           </div>
